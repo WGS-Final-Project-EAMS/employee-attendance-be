@@ -9,12 +9,12 @@ exports.createAdmin = async (req, res) => {
         const { username, role, email, assigned_by, full_name, phone_number, profile_picture_url } = req.body;
         const length = 12;
         
-        const password = crypto.randomBytes(Math.ceil(length / 2))
+        const password_hash = crypto.randomBytes(Math.ceil(length / 2))
             .toString('hex') // Convert to hexadecimal format
             .slice(0, length); // Return required number of characters
             
         // Hash the password
-        const password_hash = await bcrypt.hash(password, 10);
+        // const password_hash = await bcrypt.hash(password, 10);
         
         // Create a new user
         const user = await prisma.user.create({
