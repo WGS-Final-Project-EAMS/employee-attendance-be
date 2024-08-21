@@ -1,0 +1,206 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  user_id           String   @id @default(uuid())
+  username          String   @unique
+  password_hash     String
+  role              Role
+  email             String   @unique
+  full_name         String
+  phone_number      String?
+  profile_picture_url String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  employees         Employee[]
+  leaveRequests     LeaveRequest[]
+  adminManagements  AdminManagement[]
+  errorLogs         ErrorLog[]
+
+  Notification Notification[]
+
+  Employee Employee[] @relation("ManagerEmployee")
+
+  AdminManagement AdminManagement[] @relation("AssignedBy")
+}
+
+model Employee {
+  employee_id       String   @id @default(uuid())
+  user_id           String   @unique
+  position          String
+  department        String
+  manager_id        String?
+  employment_date   DateTime
+  status            EmployeeStatus
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  user              User     @relation(fields: [user_id], references: [user_id])
+  manager           User?    @relation("ManagerEmployee", fields: [manager_id], references: [user_id])
+  attendanceRecords Attendance[]
+  leaveRequests     LeaveRequest[]
+  streaks           Streak[]
+
+  AttendanceRecap AttendanceRecap[]
+}
+
+model Attendance {
+  attendance_id    String   @id @default(uuid())
+  employee_id      String
+  clock_in_time    DateTime
+  clock_out_time   DateTime?
+  clock_in_location String?
+  clock_out_location String?
+  status           AttendanceStatus
+  date             DateTime
+  streak_updated   Boolean  @default(false)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  employee         Employee @relation(fields: [employee_id], references: [employee_id])
+}
+
+model LeaveRequest {
+  leave_request_id String   @id @default(uuid())
+  employee_id      String
+  leave_type       LeaveType
+  leave_reason     String
+  start_date       DateTime
+  end_date         DateTime
+  status           LeaveRequestStatus
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  approved_by      String?
+  employee         Employee @relation(fields: [employee_id], references: [employee_id])
+  approver         User?    @relation(fields: [approved_by], references: [user_id])
+}
+
+model AttendanceRecap {
+  recap_id         String   @id @default(uuid())
+  employee_id      String
+  month            Int
+  year             Int
+  total_days_present Int
+  total_days_absent Int
+  total_days_late  Int
+  total_work_hours Float
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  employee         Employee @relation(fields: [employee_id], references: [employee_id])
+}
+
+model ErrorLog {
+  error_log_id     String   @id @default(uuid())
+  error_message    String
+  error_type       String
+  error_timestamp  DateTime
+  user_id          String?
+  created_at       DateTime @default(now())
+  user             User?    @relation(fields: [user_id], references: [user_id])
+}
+
+model AdminManagement {
+  admin_id         String   @id @default(uuid())
+  user_id          String
+  assigned_by      String
+  role             AdminRole
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  user             User     @relation(fields: [user_id], references: [user_id])
+  assignedBy       User     @relation("AssignedBy", fields: [assigned_by], references: [user_id])
+}
+
+model AttendanceStatistics {
+  statistic_id     String   @id @default(uuid())
+  date             DateTime
+  total_employees  Int
+  total_present    Int
+  total_absent     Int
+  total_late       Int
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+}
+
+model Notification {
+  notification_id  String   @id @default(uuid())
+  user_id          String
+  title            String
+  message          String
+  is_read          Boolean  @default(false)
+  created_at       DateTime @default(now())
+  user             User     @relation(fields: [user_id], references: [user_id])
+}
+
+model Department {
+  department_id    String   @id @default(uuid())
+  department_name  String
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  positions        Position[]
+}
+
+model Position {
+  position_id      String   @id @default(uuid())
+  position_name    String
+  department_id    String
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  department       Department @relation(fields: [department_id], references: [department_id])
+}
+
+model Streak {
+  streak_id        String   @id @default(uuid())
+  employee_id      String
+  current_streak   Int
+  longest_streak   Int
+  last_streak_date DateTime
+  reset_reason     StreakResetReason
+  last_reset_date  DateTime
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  employee         Employee @relation(fields: [employee_id], references: [employee_id])
+}
+
+enum Role {
+  super_admin
+  admin
+  manager
+  employee
+}
+
+enum EmployeeStatus {
+  active
+  inactive
+}
+
+enum AttendanceStatus {
+  present
+  late
+  wfh
+  absent
+  on_leave
+}
+
+enum LeaveType {
+  sick
+  annual
+  wfh
+  other
+}
+
+enum LeaveRequestStatus {
+  pending
+  approved
+  rejected
+}
+
+enum AdminRole {
+  admin
+  super_admin
+}
+
+enum StreakResetReason {
+  late
+  absent
+  none
+}
