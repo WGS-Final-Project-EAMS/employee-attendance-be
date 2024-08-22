@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const adminRoutes = require('./routers/adminRoutes');
 const authRoutes = require('./routers/authRoutes');
 const userRoutes = require('./routers/userRoutes');
+const employeeRoutes = require('./routers/employeeRoutes');
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use(express.json());
 app.use('/api', adminRoutes);
 app.use('/api', authRoutes);
 app.use('/api', userRoutes);
+app.use('/api', employeeRoutes);
 
 app.use('/', (req, res) => {
     res.status(404)
