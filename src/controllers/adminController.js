@@ -55,25 +55,42 @@ exports.createAdmin = async (req, res) => {
   }
 };
 
-// // Update Admin
-// exports.updateAdmin = async (req, res) => {
-//   const { admin_id } = req.params;
-//   const { user_id, assigned_by, role } = req.body;
+// Update Admin
+exports.updateAdmin = async (req, res) => {
+  const { admin_id } = req.params;
+  const { user_id, assigned_by, updated_by, role, full_name, phone_number, profile_picture_url } = req.body;
+  // const updated_by = req.user.user_id;
   
-//   try {
-//     const updatedAdmin = await prisma.adminManagement.update({
-//       where: { admin_id },
-//       data: {
-//         user_id,
-//         assigned_by,
-//         role,
-//       },
-//     });
-//     res.json(updatedAdmin);
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// };
+  try {
+    // Pastikan admin dengan admin_id ada
+    const existingAdmin = await prisma.adminManagement.findUnique({
+      where: { admin_id },
+    });
+
+    if (!existingAdmin) {
+      return res.status(404).json({ error: "Admin not found" });
+    }
+
+    // Update admin data
+    const updatedAdmin = await prisma.adminManagement.update({
+      where: { admin_id },
+      data: {
+        user_id,
+        assigned_by,
+        updated_by,
+        role,
+        full_name,
+        phone_number,
+        profile_picture_url,
+      },
+    });
+
+    res.json(updatedAdmin);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 
 // // Delete Admin
 // exports.deleteAdmin = async (req, res) => {
