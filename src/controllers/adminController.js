@@ -2,46 +2,57 @@ const prisma = require('../db/prisma');
 const bcrypt = require('bcrypt');
 const { profile } = require('console');
 const crypto = require('crypto');
+const { validationResult } = require('express-validator');
 
 // Create Admin
 exports.createAdmin = async (req, res) => {
-    try {
-        const { username, role, email, assigned_by, full_name, phone_number, profile_picture_url } = req.body;
-        const length = 12;
-        
-        const password_hash = crypto.randomBytes(Math.ceil(length / 2))
-            .toString('hex') // Convert to hexadecimal format
-            .slice(0, length); // Return required number of characters
-            
-        // Hash the password
-        // const password_hash = await bcrypt.hash(password, 10);
-        
-        // Create a new user
-        const user = await prisma.user.create({
-            data: {
-                username,
-                password_hash,
-                role,
-                email,
-            },
-        });
-        
-        // Create admin management entry
-        const admin = await prisma.adminManagement.create({
-            data: {
-                user_id: user.user_id,
-                assigned_by,
-                role,
-                full_name,
-                phone_number,
-                profile_picture_url,
-            },
-        });
-    
-        res.status(201).json(admin);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+  const errors = validationResult(req);
+  const errorMessages = errors.array().reduce((acc, error) => {
+      acc[error.path] = error.msg;
+      return acc;
+  }, {});
+
+  if (!errors.isEmpty()) {
+      return res.status(400).json({ error: errorMessages });
+  }
+
+  try {
+      const { username, role, email, assigned_by, full_name, phone_number, profile_picture_url } = req.body;
+      const length = 12;
+      
+      const password_hash = crypto.randomBytes(Math.ceil(length / 2))
+          .toString('hex') // Convert to hexadecimal format
+          .slice(0, length); // Return required number of characters
+          
+      // Hash the password
+      // const password_hash = await bcrypt.hash(password, 10);
+      
+      // Create a new user
+      const user = await prisma.user.create({
+          data: {
+              username,
+              password_hash,
+              role,
+              email,
+          },
+      });
+      
+      // Create admin management entry
+      const admin = await prisma.adminManagement.create({
+          data: {
+              user_id: user.user_id,
+              assigned_by,
+              role,
+              full_name,
+              phone_number,
+              profile_picture_url,
+          },
+      });
+  
+      res.status(201).json(admin);
+  } catch (error) {
+      res.status(500).json({ error: error.message });
+  }
 };
 
 // // Update Admin
