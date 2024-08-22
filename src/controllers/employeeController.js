@@ -92,36 +92,42 @@ exports.getEmployeeById = async (req, res) => {
     }
 };
 
-// // Update an employee
-// exports.updateEmployee = async (req, res) => {
-//     const { employee_id } = req.params;
-//     const {
-//         user_id,
-//         position,
-//         department,
-//         manager_id,
-//         employment_date,
-//         status,
-//     } = req.body;
+// Update an employee
+exports.updateEmployee = async (req, res) => {
+    const { employee_id } = req.params;
+    const {
+        user_id,
+        full_name,
+        phone_number,
+        profile_picture_url,
+        position,
+        department,
+        manager_id,
+        employment_date,
+        status,
+    } = req.body;
 
-//     try {
-//         const updatedEmployee = await prisma.employee.update({
-//             where: { employee_id },
-//             data: {
-//                 user_id,
-//                 position,
-//                 department,
-//                 manager_id,
-//                 employment_date: new Date(employment_date),
-//                 status,
-//             },
-//         });
+    try {
+        const updatedEmployee = await prisma.employee.update({
+            where: { employee_id },
+            data: {
+                user_id,
+                full_name,
+                phone_number,
+                profile_picture_url,
+                position,
+                department,
+                manager_id,
+                employment_date,
+                status,
+            },
+        });
 
-//         res.status(200).json(updatedEmployee);
-//     } catch (error) {
-//         res.status(500).json({ error: error.message });
-//     }
-// };
+        res.status(200).json(updatedEmployee);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
 
 // // Delete an employee
 // exports.deleteEmployee = async (req, res) => {
