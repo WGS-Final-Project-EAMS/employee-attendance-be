@@ -110,6 +110,7 @@ model AdminManagement {
   phone_number      String?
   profile_picture_url String?
   assigned_by      String
+  updated_by       String?
   role             AdminRole
   is_active        Boolean @default(true)
   created_at       DateTime @default(now())
