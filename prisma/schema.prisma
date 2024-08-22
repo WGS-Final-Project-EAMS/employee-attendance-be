@@ -22,8 +22,6 @@ model User {
 
   Notification Notification[]
 
-  Employee Employee[] @relation("ManagerEmployee")
-
   AdminManagement AdminManagement[] @relation("AssignedBy")
 }
 
@@ -41,12 +39,14 @@ model Employee {
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
   user              User     @relation(fields: [user_id], references: [user_id])
-  manager           User?    @relation("ManagerEmployee", fields: [manager_id], references: [user_id])
+  manager           Employee?@relation("ManagerEmployee", fields: [manager_id], references: [employee_id])
   attendanceRecords Attendance[]
   leaveRequests     LeaveRequest[]
   streaks           Streak[]
 
   AttendanceRecap AttendanceRecap[]
+
+  Employee Employee[] @relation("ManagerEmployee")
 }
 
 model Attendance {
