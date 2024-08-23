@@ -3,15 +3,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+generator client {
+  provider = "prisma-client-js"
+}
+
 model User {
   user_id           String   @id @default(uuid())
   username          String   @unique
   password_hash     String
   role              Role
   email             String   @unique
-  full_name         String
-  phone_number      String?
-  profile_picture_url String?
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
   employees         Employee[]
@@ -21,14 +22,15 @@ model User {
 
   Notification Notification[]
 
-  Employee Employee[] @relation("ManagerEmployee")
-
   AdminManagement AdminManagement[] @relation("AssignedBy")
 }
 
 model Employee {
   employee_id       String   @id @default(uuid())
   user_id           String   @unique
+  full_name         String
+  phone_number      String?
+  profile_picture_url String?
   position          String
   department        String
   manager_id        String?
@@ -37,12 +39,14 @@ model Employee {
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
   user              User     @relation(fields: [user_id], references: [user_id])
-  manager           User?    @relation("ManagerEmployee", fields: [manager_id], references: [user_id])
+  manager           Employee?@relation("ManagerEmployee", fields: [manager_id], references: [employee_id])
   attendanceRecords Attendance[]
   leaveRequests     LeaveRequest[]
   streaks           Streak[]
 
   AttendanceRecap AttendanceRecap[]
+
+  Employee Employee[] @relation("ManagerEmployee")
 }
 
 model Attendance {
@@ -102,8 +106,13 @@ model ErrorLog {
 model AdminManagement {
   admin_id         String   @id @default(uuid())
   user_id          String
+  full_name         String
+  phone_number      String?
+  profile_picture_url String?
   assigned_by      String
+  updated_by       String?
   role             AdminRole
+  is_active        Boolean @default(true)
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
   user             User     @relation(fields: [user_id], references: [user_id])
