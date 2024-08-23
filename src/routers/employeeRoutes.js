@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const employeeController = require('../controllers/employeeController');
+const { authenticateAdmin } = require('../middleware/adminAuthMiddleware');
+
+// Auth middleware
+router.use(authenticateAdmin);
 
 // Create a new employee
 router.post('/employees', employeeController.createEmployee);
