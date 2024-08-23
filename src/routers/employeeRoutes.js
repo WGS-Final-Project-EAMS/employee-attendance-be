@@ -17,7 +17,7 @@ router.put('/employees/:employee_id', employeeController.updateEmployee);
 // Activate or deactivate an employee
 router.patch('/employees/:employee_id/status', employeeController.setEmployeeStatus);
 
-// // Delete an employee
-// router.delete('/employees/:employee_id', employeeController.deleteEmployee);
+// Delete an employee
+router.delete('/employees/:employee_id', employeeController.deleteEmployee);
 
 module.exports = router;

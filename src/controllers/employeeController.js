@@ -154,15 +154,16 @@ exports.setEmployeeStatus = async (req, res) => {
 };
 
 // Delete an employee
+// Delete only employee, user still exist in the database
 exports.deleteEmployee = async (req, res) => {
     const { employee_id } = req.params;
 
     try {
-        await prisma.employee.delete({
+        const deletedEmployee = await prisma.employee.delete({
             where: { employee_id },
         });
 
-        res.status(204).send();
+        res.status(204).json({ deletedEmployee });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
