@@ -1,30 +1,27 @@
 const express = require('express');
 const router = express.Router();
 const employeeController = require('../controllers/employeeController');
-const { authenticateAdmin } = require('../middleware/adminAuthMiddleware');
-
-// Auth middleware
-router.use(authenticateAdmin);
+const { authenticateRole } = require('../middleware/authMiddleware');
 
 // Create a new employee
-router.post('/employees', employeeController.createEmployee);
+router.post('/employees', authenticateRole('admin'), employeeController.createEmployee);
 
 // Get all employees
-router.get('/employees', employeeController.getAllEmployees);
+router.get('/employees', authenticateRole('admin'), employeeController.getAllEmployees);
 
 // Get inactive employees
-router.get('/employees/inactive', employeeController.getInactiveEmployees);
+router.get('/employees/inactive', authenticateRole('admin'), employeeController.getInactiveEmployees);
 
 // Get an employee by ID
-router.get('/employees/:employee_id', employeeController.getEmployeeById);
+router.get('/employees/:employee_id', authenticateRole('admin'), employeeController.getEmployeeById);
 
 // Update an employee
-router.put('/employees/:employee_id', employeeController.updateEmployee);
+router.put('/employees/:employee_id', authenticateRole('admin'), employeeController.updateEmployee);
 
 // Activate or deactivate an employee
-router.patch('/employees/:employee_id/status', employeeController.setEmployeeStatus);
+router.patch('/employees/:employee_id/status', authenticateRole('admin'), employeeController.setEmployeeStatus);
 
 // Delete an employee
-router.delete('/employees/:employee_id', employeeController.deleteEmployee);
+router.delete('/employees/:employee_id', authenticateRole('admin'), employeeController.deleteEmployee);
 
 module.exports = router;
