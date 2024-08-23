@@ -70,6 +70,21 @@ exports.getAllEmployees = async (req, res) => {
     }
 };
 
+// Get inactive employees
+exports.getInactiveEmployees = async (req, res) => {
+    try {
+        const employees = await prisma.employee.findMany({
+            where: {status: 'inactive'},
+            include: {
+                user: true,  // include user data for each employee
+            },
+        });
+        res.status(200).json(employees);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // Get an employee by ID
 exports.getEmployeeById = async (req, res) => {
     const { employee_id } = req.params;

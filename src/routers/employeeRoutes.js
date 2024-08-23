@@ -8,6 +8,9 @@ router.post('/employees', employeeController.createEmployee);
 // Get all employees
 router.get('/employees', employeeController.getAllEmployees);
 
+// Get inactive employees
+router.get('/employees/inactive', employeeController.getInactiveEmployees);
+
 // Get an employee by ID
 router.get('/employees/:employee_id', employeeController.getEmployeeById);
 
