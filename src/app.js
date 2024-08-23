@@ -1,7 +1,6 @@
 const express = require('express');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
-// const prisma = require("./db/prisma");
 const adminRoutes = require('./routers/adminRoutes');
 const authRoutes = require('./routers/authRoutes');
 const userRoutes = require('./routers/userRoutes');
@@ -19,11 +18,13 @@ app.use(morgan('dev'));
 
 app.use(express.json());
 
+// API Routes
 app.use('/api', adminRoutes);
 app.use('/api', authRoutes);
 app.use('/api', userRoutes);
 app.use('/api', employeeRoutes);
 
+// Default empty routes
 app.use('/', (req, res) => {
     res.status(404)
     res.send('PAGE NOT FOUND: 404')
