@@ -54,10 +54,11 @@ exports.createEmployee = async (req, res) => {
     }
 };
 
-// Get all employees
+// Get all active employees
 exports.getAllEmployees = async (req, res) => {
     try {
         const employees = await prisma.employee.findMany({
+            where: {status: 'active'},
             include: {
                 user: true,  // include user data for each employee
                 manager: true, // include manager data if exists
@@ -129,17 +130,40 @@ exports.updateEmployee = async (req, res) => {
     }
 };
 
-// // Delete an employee
-// exports.deleteEmployee = async (req, res) => {
-//     const { employee_id } = req.params;
+// Activate and Deactivate an employee
+exports.setEmployeeStatus = async (req, res) => {
+    const { employee_id } = req.params;
 
-//     try {
-//         await prisma.employee.delete({
-//             where: { employee_id },
-//         });
+    try {
+        const employee = await prisma.employee.findUnique({
+            where: { employee_id },
+            select: { status: true },
+        });
 
-//         res.status(204).send();
-//     } catch (error) {
-//         res.status(500).json({ error: error.message });
-//     }
-// };
+        const status = employee.status === 'active' ? 'inactive' : 'active';
+
+        const updatedEmployee = await prisma.employee.update({
+            where: { employee_id },
+            data: { status },
+        });
+
+        res.status(200).json(updatedEmployee);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Delete an employee
+exports.deleteEmployee = async (req, res) => {
+    const { employee_id } = req.params;
+
+    try {
+        await prisma.employee.delete({
+            where: { employee_id },
+        });
+
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
