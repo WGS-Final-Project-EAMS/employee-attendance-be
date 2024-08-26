@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const { Parser } = require('json2csv');
 
 const getEmployeeByUserId = async (user_id) => {
     return await prisma.employee.findFirst({
@@ -7,6 +8,11 @@ const getEmployeeByUserId = async (user_id) => {
         select: { employee_id: true },
     });
 };
+
+// ===================
+// ATTENDANCE TRACKING
+// For: employee
+// ===================
 
 // Clock-in
 exports.clockIn = async (req, res) => {
@@ -94,6 +100,77 @@ exports.getAttendanceHistory = async (req, res) => {
         });
 
         res.status(200).json(attendanceHistory);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// ================
+// Attendance Recap
+// For: admin
+// ================
+
+// Get Attendance Recap (Daily/Monthly)
+exports.getAttendanceRecap = async (req, res) => {
+    const { period, date, month, year } = req.query;
+
+    try {
+        let recaps;
+
+        if (period === 'daily') {
+            const selectedDate = new Date(date);
+            recaps = await prisma.attendance.findMany({
+                where: {
+                    date: selectedDate,
+                },
+                include: {
+                    employee: {
+                        select: {
+                            full_name: true,
+                            department: true,
+                            position: true,
+                        },
+                    },
+                },
+            });
+        } else if (period === 'monthly') {
+            recaps = await prisma.attendanceRecap.findMany({
+                where: {
+                    month: parseInt(month, 10),
+                    year: parseInt(year, 10),
+                },
+                include: {
+                    employee: {
+                        select: {
+                            full_name: true,
+                            department: true,
+                            position: true,
+                        },
+                    },
+                },
+            });
+        } else {
+            return res.status(400).json({ error: 'Invalid period type. Use "daily" or "monthly".' });
+        }
+
+        if (recaps.length === 0) {
+            return res.status(404).json({ error: 'No attendance data found for the specified period.' });
+        }
+
+        // Convert to CSV if requested
+        if (req.query.format === 'csv') {
+            const fields = period === 'daily' ? 
+                ['employee.full_name', 'employee.department', 'employee.position', 'clock_in_time', 'clock_out_time', 'status', 'date'] :
+                ['employee.full_name', 'employee.department', 'employee.position', 'total_days_present', 'total_days_absent', 'total_days_late', 'total_work_hours', 'month', 'year'];
+
+            const parser = new Parser({ fields });
+            const csv = parser.parse(recaps);
+            res.header('Content-Type', 'text/csv');
+            res.attachment(`${period}-attendance-recap.csv`);
+            return res.send(csv);
+        }
+
+        res.status(200).json({ recaps });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
