@@ -5,6 +5,7 @@ const adminRoutes = require('./routers/adminRoutes');
 const authRoutes = require('./routers/authRoutes');
 const userRoutes = require('./routers/userRoutes');
 const employeeRoutes = require('./routers/employeeRoutes');
+const attendanceRoutes = require('./routers/attendanceRoutes');
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use('/api', adminRoutes);
 app.use('/api', authRoutes);
 app.use('/api', userRoutes);
 app.use('/api', employeeRoutes);
+app.use('/api', attendanceRoutes);
 
 // Default empty routes
 app.use('/', (req, res) => {
