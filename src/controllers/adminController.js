@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const { profile } = require('console');
 const crypto = require('crypto');
 const { validationResult } = require('express-validator');
+const errorLogs = require('../utils/errorLogs');
 
 // Create Admin
 exports.createAdmin = async (req, res) => {
@@ -51,6 +52,14 @@ exports.createAdmin = async (req, res) => {
   
       res.status(201).json(admin);
   } catch (error) {
+      const { user_id } = req.user;
+
+      await errorLogs({
+        error_message: error.message,
+        error_type: 'CreateAdminError',
+        user_id,
+      });
+    
       res.status(500).json({ error: error.message });
   }
 };
@@ -87,6 +96,14 @@ exports.updateAdmin = async (req, res) => {
 
     res.json(updatedAdmin);
   } catch (error) {
+    const { user_id } = req.user;
+
+    await errorLogs({
+      error_message: error.message,
+      error_type: 'UpdateAdminError',
+      user_id,
+    });
+
     res.status(500).json({ error: error.message });
   }
 };
@@ -112,6 +129,14 @@ exports.getAllAdmins = async (req, res) => {
     const admins = await prisma.adminManagement.findMany();
     res.json(admins);
   } catch (error) {
+    const { user_id } = req.user;
+    
+    await errorLogs({
+      error_message: error.message,
+      error_type: 'GetAllAdminError',
+      user_id,
+    });
+
     res.status(500).json({ error: error.message });
   }
 };
@@ -130,6 +155,14 @@ exports.getAdminById = async (req, res) => {
       res.status(404).json({ error: 'Admin not found' });
     }
   } catch (error) {
+    const { user_id } = req.user;
+    
+    await errorLogs({
+      error_message: error.message,
+      error_type: 'GetAdminByIdError',
+      user_id,
+    });
+    
     res.status(500).json({ error: error.message });
   }
 };

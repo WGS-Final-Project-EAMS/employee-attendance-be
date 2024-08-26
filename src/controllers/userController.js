@@ -1,5 +1,6 @@
 const prisma = require('../db/prisma');
 const bcrypt = require('bcrypt');
+const errorLogs = require('../utils/errorLogs');
 
 // exports.createUser = async (req, res) => {
 //     try {
@@ -25,6 +26,12 @@ exports.getAllUsers = async (req, res) => {
       const users = await prisma.User.findMany();
       res.json(users);
     } catch (error) {
+      
+      await errorLogs({
+        error_message: error.message,
+        error_type: 'LoginError',
+      });
+
       res.status(500).json({ error: error.message });
     }
   };

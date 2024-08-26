@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const { validationResult } = require('express-validator');
 const prisma = new PrismaClient();
+const errorLogs = require('../utils/errorLogs');
 
 const SECRET_KEY = process.env.SECRET_KEY; // Gantilah dengan key yang lebih aman dan simpan di environment variable
 
@@ -53,6 +54,11 @@ exports.login = async (req, res) => {
 
         res.status(200).json({ token });
     } catch (error) {
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'LoginError',
+        });
+
         res.status(500).json({ error: error.message });
     }
 };
@@ -90,6 +96,10 @@ exports.logout = async (req, res) => {
         res.status(200).json({ message: 'Logout successful' });
     } catch (error) {
         // Menangani kesalahan
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'LogoutError',
+        });
         res.status(500).json({ error: error.message });
     }
 }
