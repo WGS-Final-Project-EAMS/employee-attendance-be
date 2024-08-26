@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Routes untuk attendance
 router.post('/clock-in', authenticateRole('employee'), clockIn);
-// router.post('/clock-out', authenticateRole('employee'), clockOut);
-// router.get('/attendance-history', authenticateRole('employee'), getAttendanceHistory);
+router.post('/clock-out', authenticateRole('employee'), clockOut);
+router.get('/attendance-history', authenticateRole('employee'), getAttendanceHistory);
 
 module.exports = router;
