@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const crypto = require('crypto');
+const errorLogs = require('../utils/errorLogs');
 
 // Create a new employee
 exports.createEmployee = async (req, res) => {
@@ -50,6 +51,14 @@ exports.createEmployee = async (req, res) => {
 
         res.status(201).json(newEmployee);
     } catch (error) {
+        const { user_id } = req.user;
+
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'CreateEmployeeError',
+            user_id,
+        });
+
         res.status(500).json({ error: error.message });
     }
 };
@@ -66,6 +75,14 @@ exports.getAllEmployees = async (req, res) => {
         });
         res.status(200).json(employees);
     } catch (error) {
+        const { user_id } = req.user;
+
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'getAllEmployeeError',
+            user_id,
+        });
+
         res.status(500).json({ error: error.message });
     }
 };
@@ -81,6 +98,14 @@ exports.getInactiveEmployees = async (req, res) => {
         });
         res.status(200).json(employees);
     } catch (error) {
+        const { user_id } = req.user;
+
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'GetInactiveEmployeeError',
+            user_id,
+        });
+
         res.status(500).json({ error: error.message });
     }
 };
@@ -104,6 +129,14 @@ exports.getEmployeeById = async (req, res) => {
 
         res.status(200).json(employee);
     } catch (error) {
+        const { user_id } = req.user;
+
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'GetEmployeeByIdError',
+            user_id,
+        });
+
         res.status(500).json({ error: error.message });
     }
 };
@@ -141,6 +174,14 @@ exports.updateEmployee = async (req, res) => {
 
         res.status(200).json(updatedEmployee);
     } catch (error) {
+        const { user_id } = req.user;
+
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'UpdateEmployeeError',
+            user_id,
+        });
+
         res.status(500).json({ error: error.message });
     }
 };
@@ -164,6 +205,14 @@ exports.setEmployeeStatus = async (req, res) => {
 
         res.status(200).json(updatedEmployee);
     } catch (error) {
+        const { user_id } = req.user;
+
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'SetEmployeeStatusError',
+            user_id,
+        });
+
         res.status(500).json({ error: error.message });
     }
 };
@@ -180,6 +229,14 @@ exports.deleteEmployee = async (req, res) => {
 
         res.status(204).json({ deletedEmployee });
     } catch (error) {
+        const { user_id } = req.user;
+
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'DeleteEmployeeError',
+            user_id,
+        });
+
         res.status(500).json({ error: error.message });
     }
 };

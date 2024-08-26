@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { Parser } = require('json2csv');
+const errorLogs = require('../utils/errorLogs');
 
 const getEmployeeByUserId = async (user_id) => {
     return await prisma.employee.findFirst({
@@ -48,6 +49,12 @@ exports.clockIn = async (req, res) => {
 
         res.status(201).json({ message: "Clocked in successfully", attendance });
     } catch (error) {
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'ClockInError',
+            user_id,
+        });
+
         res.status(500).json({ error: error.message });
     }
 };
@@ -83,6 +90,12 @@ exports.clockOut = async (req, res) => {
 
         res.status(200).json({ message: "Clocked out successfully", updatedAttendance });
     } catch (error) {
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'ClockOutError',
+            user_id,
+        });
+
         res.status(500).json({ error: error.message });
     }
 };
@@ -101,6 +114,11 @@ exports.getAttendanceHistory = async (req, res) => {
 
         res.status(200).json(attendanceHistory);
     } catch (error) {
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'AttendanceHistoryError',
+            user_id,
+        });
         res.status(500).json({ error: error.message });
     }
 };
@@ -113,6 +131,7 @@ exports.getAttendanceHistory = async (req, res) => {
 // Get Attendance Recap (Daily/Monthly)
 exports.getAttendanceRecap = async (req, res) => {
     const { period, date, month, year } = req.query;
+    const { user_id } = req.user;
 
     try {
         let recaps;
@@ -172,6 +191,12 @@ exports.getAttendanceRecap = async (req, res) => {
 
         res.status(200).json({ recaps });
     } catch (error) {
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'AttendanceRecapError',
+            user_id,
+        });
+
         res.status(500).json({ error: error.message });
     }
 };
