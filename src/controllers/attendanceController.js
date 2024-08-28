@@ -100,6 +100,45 @@ exports.clockOut = async (req, res) => {
     }
 };
 
+// Check Attendance Status for Today
+exports.checkAttendanceStatus = async (req, res) => {
+    const { user_id } = req.user;
+    
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Get employee by user_id
+        const employee = await getEmployeeByUserId(user_id);
+
+        // Check attendance status for today
+        const attendance = await prisma.attendance.findFirst({
+            where: {
+                employee_id: employee.employee_id,
+                date: today,
+            },
+        });
+
+        if (!attendance) {
+            return res.status(200).json({ status: "no_clock_in" });
+        }
+
+        if (attendance.clock_out_time) {
+            return res.status(200).json({ status: "clocked_out" });
+        }
+
+        return res.status(200).json({ status: "clocked_in" });
+    } catch (error) {
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'CheckAttendanceStatusError',
+            user_id,
+        });
+
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // Get attendance history
 exports.getAttendanceHistory = async (req, res) => {
     const { user_id } = req.user;
