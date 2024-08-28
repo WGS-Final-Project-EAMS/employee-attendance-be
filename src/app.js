@@ -20,6 +20,18 @@ app.use(morgan('dev'));
 
 app.use(express.json());
 
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*"); // Mengizinkan semua origin
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"); // Mengizinkan semua metode HTTP
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).json({});
+    }
+
+    next();
+});
+
 // API Routes
 app.use('/api', adminRoutes);
 app.use('/api', authRoutes);
