@@ -38,7 +38,7 @@ exports.login = async (req, res) => {
         };
 
         if (!isPasswordValid(password, user.password_hash)) {
-            return res.status(401).json({ error: "Invalid email or password" });
+            return res.status(401).json({ error: { general: "Invalid email or password" } });
         }
 
         // Generate JWT token
