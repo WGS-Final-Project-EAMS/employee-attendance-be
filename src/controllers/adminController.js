@@ -68,7 +68,8 @@ exports.createAdmin = async (req, res) => {
 // Update Admin
 exports.updateAdmin = async (req, res) => {
   const { admin_id } = req.params;
-  const { user_id, assigned_by, updated_by, role, full_name, phone_number, profile_picture_url } = req.body;
+  const { user_id, username, email, assigned_by, updated_by, role, full_name, phone_number, profile_picture_url } = req.body;
+  const profilePictureUrl = req.file ? req.file.path : null;
   // const updated_by = req.user.user_id;
   
   try {
@@ -81,6 +82,15 @@ exports.updateAdmin = async (req, res) => {
       return res.status(404).json({ error: "Admin not found" });
     }
 
+    // Update user data
+    const user = await prisma.user.update({
+      where: { user_id },
+      data: {
+        username,
+        email,
+      },
+    });
+
     // Update admin data
     const updatedAdmin = await prisma.adminManagement.update({
       where: { admin_id },
@@ -91,7 +101,7 @@ exports.updateAdmin = async (req, res) => {
         role,
         full_name,
         phone_number,
-        profile_picture_url,
+        profile_picture_url: profilePictureUrl || existingAdmin.profile_picture_url,
       },
     });
 

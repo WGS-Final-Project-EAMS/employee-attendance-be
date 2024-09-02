@@ -9,7 +9,7 @@ const { upload } = require('../middleware/multerMiddleware');
 router.post('/admin', authenticateRole('super_admin'), upload.single('profile_picture_url'), createAdminValidation(), adminController.createAdmin);
 
 // Update an admin by id
-router.put('/admin/:admin_id', authenticateRole('super_admin'), adminController.updateAdmin);
+router.put('/admin/:admin_id', authenticateRole('super_admin'), upload.single('profile_picture_url'), adminController.updateAdmin);
 // router.delete('/api/admins/:admin_id', adminController.deleteAdmin);
 
 // Get all admin
