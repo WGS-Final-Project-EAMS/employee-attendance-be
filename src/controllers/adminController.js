@@ -18,7 +18,8 @@ exports.createAdmin = async (req, res) => {
   }
 
   try {
-      const { username, role, email, assigned_by, full_name, phone_number, profile_picture_url } = req.body;
+      const { username, role, email, assigned_by, full_name, phone_number } = req.body;
+      const profilePictureUrl = req.file ? req.file.path : null;
       const length = 12;
       
       const password_hash = crypto.randomBytes(Math.ceil(length / 2))
@@ -46,7 +47,7 @@ exports.createAdmin = async (req, res) => {
               role,
               full_name,
               phone_number,
-              profile_picture_url,
+              profile_picture_url: profilePictureUrl,
           },
       });
   
@@ -126,7 +127,13 @@ exports.updateAdmin = async (req, res) => {
 // Get List of Admins
 exports.getAllAdmins = async (req, res) => {
   try {
-    const admins = await prisma.adminManagement.findMany();
+    const admins = await prisma.adminManagement.findMany({
+      where: { is_active: true },
+      include: {
+        user: true,  // include user data for each employee
+        assignedBy: true, // include user assigner data for each employee
+      },
+    });
     res.json(admins);
   } catch (error) {
     const { user_id } = req.user;

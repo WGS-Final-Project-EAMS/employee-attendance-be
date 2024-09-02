@@ -3,9 +3,10 @@ const router = express.Router();
 const adminController = require('../controllers/adminController');
 const { createAdminValidation } = require('../validator/adminValidation');
 const { authenticateRole } = require('../middleware/authMiddleware');
+const { upload } = require('../middleware/multerMiddleware');
 
 // Create New Admin
-router.post('/admin', authenticateRole('super_admin'), createAdminValidation(), adminController.createAdmin);
+router.post('/admin', authenticateRole('super_admin'), upload.single('profile_picture_url'), createAdminValidation(), adminController.createAdmin);
 
 // Update an admin by id
 router.put('/admin/:admin_id', authenticateRole('super_admin'), adminController.updateAdmin);

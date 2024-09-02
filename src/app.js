@@ -7,6 +7,7 @@ const userRoutes = require('./routers/userRoutes');
 const employeeRoutes = require('./routers/employeeRoutes');
 const attendanceRoutes = require('./routers/attendanceRoutes');
 const errorLogRoutes = require('./routers/errorLogRoutes');
+const path = require('path');
 
 const app = express();
 
@@ -31,6 +32,8 @@ app.use((req, res, next) => {
 
     next();
 });
+
+app.use('/api/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // API Routes
 app.use('/api', adminRoutes);
