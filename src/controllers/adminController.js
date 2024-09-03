@@ -4,6 +4,7 @@ const { profile } = require('console');
 const crypto = require('crypto');
 const { validationResult } = require('express-validator');
 const errorLogs = require('../utils/errorLogs');
+const { transport } = require('../utils/emailTransporter');
 
 // Create Admin
 exports.createAdmin = async (req, res) => {
@@ -17,17 +18,42 @@ exports.createAdmin = async (req, res) => {
       return res.status(400).json({ error: errorMessages });
   }
 
-  try {
-      const { username, role, email, assigned_by, full_name, phone_number } = req.body;
-      const profilePictureUrl = req.file ? req.file.path : null;
-      const length = 12;
+  const { username, role, email, assigned_by, full_name, phone_number } = req.body;
+  const profilePictureUrl = req.file ? req.file.path : null;
+  const length = 12;
+  
+  const password_hash = crypto.randomBytes(Math.ceil(length / 2))
+      .toString('hex') // Convert to hexadecimal format
+      .slice(0, length); // Return required number of characters
       
-      const password_hash = crypto.randomBytes(Math.ceil(length / 2))
-          .toString('hex') // Convert to hexadecimal format
-          .slice(0, length); // Return required number of characters
-          
-      // Hash the password
-      // const password_hash = await bcrypt.hash(password, 10);
+  // Hash the password
+  // const password_hash = await bcrypt.hash(password, 10);
+
+  // Configure the mailoptions object
+  const text = `
+    Dear ${email},
+
+    Welcome to Ngabsen! Your account has been successfully created. Below are your login details:
+
+    Email: ${email}
+    Password: ${password_hash}
+
+    Please keep this information secure and do not share it with anyone. You can log in to the application at any time using the above credentials.
+
+    If you have any questions or need assistance, feel free to contact our support team.
+
+    Best regards,
+    The Ngabsen Team
+  `;
+  
+  const mailOptions = {
+    from: 'no_reply@email.com',
+    to: email,
+    subject: 'New ngabsen account',
+    text
+  };
+
+  try {
       
       // Create a new user
       const user = await prisma.user.create({
@@ -49,6 +75,14 @@ exports.createAdmin = async (req, res) => {
               phone_number,
               profile_picture_url: profilePictureUrl,
           },
+      });
+    
+      transport.sendMail(mailOptions, function(error, info){
+        if (error) {
+            console.log({error: error.message})
+        } else {
+          console.log('Email sent: ' + info.response);
+        }
       });
   
       res.status(201).json(admin);
