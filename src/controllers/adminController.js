@@ -123,19 +123,39 @@ exports.updateAdmin = async (req, res) => {
 };
 
 
-// // Delete Admin
-// exports.deleteAdmin = async (req, res) => {
-//   const { admin_id } = req.params;
+// Delete Admin (hard delete)
+exports.deleteAdmin = async (req, res) => {
+  const { admin_id } = req.params;
   
-//   try {
-//     await prisma.adminManagement.delete({
-//       where: { admin_id },
-//     });
-//     res.status(204).send();
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// };
+  try {
+    const admin = await prisma.adminManagement.findUnique({
+      where: { admin_id },
+      select: { user_id: true }
+    });
+
+    // Delete admin data
+    await prisma.adminManagement.delete({
+      where: { admin_id },
+    });
+
+    // Delete user data
+    await prisma.user.delete({
+      where: { user_id: admin.user_id },
+    });
+
+    res.status(204).send();
+  } catch (error) {
+    const { user_id } = req.user;
+
+    await errorLogs({
+      error_message: error.message,
+      error_type: 'DeleteAdminError',
+      user_id,
+    });
+
+    res.status(500).json({ error: error.message });
+  }
+};
 
 // Get List of Admins
 exports.getAllAdmins = async (req, res) => {
@@ -176,7 +196,7 @@ exports.getActiveAdmins = async (req, res) => {
     
     await errorLogs({
       error_message: error.message,
-      error_type: 'GetAllAdminError',
+      error_type: 'GetActiveAdminError',
       user_id,
     });
 
@@ -200,7 +220,7 @@ exports.getNonactiveAdmins = async (req, res) => {
     
     await errorLogs({
       error_message: error.message,
-      error_type: 'GetAllAdminError',
+      error_type: 'GetNonactiveAdminError',
       user_id,
     });
 
