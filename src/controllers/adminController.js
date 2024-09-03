@@ -68,7 +68,9 @@ exports.createAdmin = async (req, res) => {
 // Update Admin
 exports.updateAdmin = async (req, res) => {
   const { admin_id } = req.params;
-  const { user_id, username, email, assigned_by, updated_by, role, full_name, phone_number, profile_picture_url } = req.body;
+  const { user_id, username, email, assigned_by, updated_by, role, full_name, phone_number } = req.body;
+  const is_active = req.body.is_active === "true";
+  
   const profilePictureUrl = req.file ? req.file.path : null;
   // const updated_by = req.user.user_id;
   
@@ -102,6 +104,7 @@ exports.updateAdmin = async (req, res) => {
         full_name,
         phone_number,
         profile_picture_url: profilePictureUrl || existingAdmin.profile_picture_url,
+        is_active,
       },
     });
 
@@ -138,7 +141,54 @@ exports.updateAdmin = async (req, res) => {
 exports.getAllAdmins = async (req, res) => {
   try {
     const admins = await prisma.adminManagement.findMany({
+      include: {
+        user: true,  // include user data for each employee
+        assignedBy: true, // include user assigner data for each employee
+      },
+    });
+    res.json(admins);
+  } catch (error) {
+    const { user_id } = req.user;
+    
+    await errorLogs({
+      error_message: error.message,
+      error_type: 'GetAllAdminError',
+      user_id,
+    });
+
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get List of Active Admins
+exports.getActiveAdmins = async (req, res) => {
+  try {
+    const admins = await prisma.adminManagement.findMany({
       where: { is_active: true },
+      include: {
+        user: true,  // include user data for each employee
+        assignedBy: true, // include user assigner data for each employee
+      },
+    });
+    res.json(admins);
+  } catch (error) {
+    const { user_id } = req.user;
+    
+    await errorLogs({
+      error_message: error.message,
+      error_type: 'GetAllAdminError',
+      user_id,
+    });
+
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get List of Non-active Admins
+exports.getNonactiveAdmins = async (req, res) => {
+  try {
+    const admins = await prisma.adminManagement.findMany({
+      where: { is_active: false },
       include: {
         user: true,  // include user data for each employee
         assignedBy: true, // include user assigner data for each employee
