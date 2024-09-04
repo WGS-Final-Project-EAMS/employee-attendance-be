@@ -70,7 +70,6 @@ exports.createAdmin = async (req, res) => {
           data: {
               user_id: user.user_id,
               assigned_by,
-              role,
               full_name,
               phone_number,
               profile_picture_url: profilePictureUrl,
