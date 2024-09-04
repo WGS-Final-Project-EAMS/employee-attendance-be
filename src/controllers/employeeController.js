@@ -16,7 +16,6 @@ exports.createEmployee = async (req, res) => {
             profile_picture_url,
             manager_id,
             employment_date,
-            status,
         } = req.body;
 
         const length = 12;
@@ -45,7 +44,6 @@ exports.createEmployee = async (req, res) => {
                 profile_picture_url,
                 manager_id: manager_id || null,
                 employment_date: new Date(employment_date),
-                status,
             },
         });
 
@@ -67,7 +65,11 @@ exports.createEmployee = async (req, res) => {
 exports.getAllEmployees = async (req, res) => {
     try {
         const employees = await prisma.employee.findMany({
-            where: {status: 'active'},
+            where: {
+                user: {
+                    is_active: true,
+                }
+            },
             include: {
                 user: true,  // include user data for each employee
                 manager: true, // include manager data if exists
@@ -91,7 +93,11 @@ exports.getAllEmployees = async (req, res) => {
 exports.getInactiveEmployees = async (req, res) => {
     try {
         const employees = await prisma.employee.findMany({
-            where: {status: 'inactive'},
+            where: {
+                user: {
+                    is_active: false,
+                }
+            },
             include: {
                 user: true,  // include user data for each employee
             },
@@ -153,7 +159,7 @@ exports.updateEmployee = async (req, res) => {
         department,
         manager_id,
         employment_date,
-        status,
+        is_active,
     } = req.body;
 
     try {
@@ -168,7 +174,6 @@ exports.updateEmployee = async (req, res) => {
                 department,
                 manager_id,
                 employment_date,
-                status,
             },
         });
 
