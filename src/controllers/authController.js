@@ -28,7 +28,7 @@ exports.login = async (req, res) => {
         });
 
         if (!user) {
-            return res.status(401).json({ error: "Invalid email or password" });
+            return res.status(401).json({ error: { general: "Invalid email or password" } });
         }
 
         // Compare the provided password with the stored hash
@@ -39,6 +39,14 @@ exports.login = async (req, res) => {
 
         if (!isPasswordValid(password, user.password_hash)) {
             return res.status(401).json({ error: { general: "Invalid email or password" } });
+        }
+
+        const isUserActive = (status) => {
+            return status;
+        }
+
+        if (!isUserActive(user.is_active)) {
+            return res.status(401).json({ error: { general: "Your account is inactive" } });
         }
 
         // Generate JWT token
