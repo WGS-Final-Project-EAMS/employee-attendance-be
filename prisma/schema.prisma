@@ -15,6 +15,7 @@ model User {
   email             String   @unique
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
+  is_active        Boolean @default(true)
   employees         Employee[]
   leaveRequests     LeaveRequest[]
   adminManagements  AdminManagement[]
@@ -35,7 +36,6 @@ model Employee {
   department        String
   manager_id        String?
   employment_date   DateTime
-  is_active        Boolean @default(true)
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
   user              User     @relation(fields: [user_id], references: [user_id])
@@ -111,8 +111,6 @@ model AdminManagement {
   profile_picture_url String?
   assigned_by      String
   updated_by       String?
-  role             AdminRole
-  is_active        Boolean @default(true)
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
   user             User     @relation(fields: [user_id], references: [user_id])
@@ -173,14 +171,8 @@ model Streak {
 enum Role {
   super_admin
   admin
-  manager
   employee
 }
-
-// enum EmployeeStatus {
-//   active
-//   inactive
-// }
 
 enum AttendanceStatus {
   present
@@ -201,11 +193,6 @@ enum LeaveRequestStatus {
   pending
   approved
   rejected
-}
-
-enum AdminRole {
-  admin
-  super_admin
 }
 
 enum StreakResetReason {
