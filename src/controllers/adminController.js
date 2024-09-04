@@ -102,7 +102,7 @@ exports.createAdmin = async (req, res) => {
 // Update Admin
 exports.updateAdmin = async (req, res) => {
   const { admin_id } = req.params;
-  const { user_id, username, email, assigned_by, updated_by, role, full_name, phone_number } = req.body;
+  const { user_id, username, email, assigned_by, updated_by, full_name, phone_number } = req.body;
   const is_active = req.body.is_active === "true";
   
   const profilePictureUrl = req.file ? req.file.path : null;
@@ -124,6 +124,7 @@ exports.updateAdmin = async (req, res) => {
       data: {
         username,
         email,
+        is_active,
       },
     });
 
@@ -131,14 +132,12 @@ exports.updateAdmin = async (req, res) => {
     const updatedAdmin = await prisma.adminManagement.update({
       where: { admin_id },
       data: {
-        user_id,
-        assigned_by,
+        user: { connect: { user_id } },
+        assignedBy: { connect: { user_id: assigned_by } },  // Relasi assignedBy
         updated_by,
-        role,
         full_name,
         phone_number,
         profile_picture_url: profilePictureUrl || existingAdmin.profile_picture_url,
-        is_active,
       },
     });
 
@@ -218,7 +217,11 @@ exports.getAllAdmins = async (req, res) => {
 exports.getActiveAdmins = async (req, res) => {
   try {
     const admins = await prisma.adminManagement.findMany({
-      where: { is_active: true },
+      where: {
+        user: {
+          is_active: true
+        }
+      },
       include: {
         user: true,  // include user data for each employee
         assignedBy: true, // include user assigner data for each employee
@@ -242,7 +245,11 @@ exports.getActiveAdmins = async (req, res) => {
 exports.getNonactiveAdmins = async (req, res) => {
   try {
     const admins = await prisma.adminManagement.findMany({
-      where: { is_active: false },
+      where: {
+        user: {
+          is_active: false
+        }
+      },
       include: {
         user: true,  // include user data for each employee
         assignedBy: true, // include user assigner data for each employee
