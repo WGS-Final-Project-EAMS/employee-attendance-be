@@ -2,28 +2,65 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const crypto = require('crypto');
 const errorLogs = require('../utils/errorLogs');
+const { validationResult } = require('express-validator');
+const { transport } = require('../utils/emailTransporter');
 
 // Create a new employee
 exports.createEmployee = async (req, res) => {
+    const errors = validationResult(req);
+    const errorMessages = errors.array().reduce((acc, error) => {
+        acc[error.path] = error.msg;
+        return acc;
+    }, {});
+
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ error: errorMessages });
+    }
+
+    const {
+        email,
+        username,
+        full_name,
+        phone_number,
+        position,
+        department,
+        manager_id,
+        employment_date,
+    } = req.body;
+
+    const profilePictureUrl = req.file ? req.file.path : null;
+
+    const length = 12;
+  
+    const password_hash = crypto.randomBytes(Math.ceil(length / 2))
+        .toString('hex') // Convert to hexadecimal format
+        .slice(0, length); // Return required number of characters
+    
+    // Configure the mailoptions object
+    const text = `
+        Dear ${email},
+
+        Welcome to Ngabsen! Your account has been successfully created. Below are your login details:
+
+        Email: ${email}
+        Password: ${password_hash}
+
+        Please keep this information secure and do not share it with anyone. You can log in to the application at any time using the above credentials.
+
+        If you have any questions or need assistance, feel free to contact our support team.
+
+        Best regards,
+        The Ngabsen Team
+    `;
+
+    const mailOptions = {
+        from: 'no_reply@email.com',
+        to: email,
+        subject: 'New ngabsen employee account',
+        text
+    };
+
     try {
-        const {
-            email,
-            username,
-            full_name,
-            phone_number,
-            position,
-            department,
-            manager_id,
-            employment_date,
-        } = req.body;
-
-        const profilePictureUrl = req.file ? req.file.path : null;
-
-        const length = 12;
-      
-        const password_hash = crypto.randomBytes(Math.ceil(length / 2))
-            .toString('hex') // Convert to hexadecimal format
-            .slice(0, length); // Return required number of characters
 
         // Create a new user
         const user = await prisma.user.create({
@@ -46,6 +83,14 @@ exports.createEmployee = async (req, res) => {
                 manager_id: manager_id || null,
                 employment_date: new Date(employment_date),
             },
+        });
+
+        transport.sendMail(mailOptions, function(error, info){
+            if (error) {
+                console.log({error: error.message})
+            } else {
+                console.log('Email sent: ' + info.response);
+            }
         });
 
         res.status(201).json(newEmployee);

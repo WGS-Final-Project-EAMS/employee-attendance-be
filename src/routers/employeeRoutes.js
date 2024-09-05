@@ -2,10 +2,11 @@ const express = require('express');
 const router = express.Router();
 const employeeController = require('../controllers/employeeController');
 const { authenticateRole } = require('../middleware/authMiddleware');
+const { createEmployeeValidation } = require('../validator/employeeValidation');
 const { upload } = require('../middleware/multerMiddleware');
 
 // Create a new employee
-router.post('/employees', authenticateRole('admin'), upload.single('profile_picture_url'), employeeController.createEmployee);
+router.post('/employees', authenticateRole('admin'), upload.single('profile_picture_url'), createEmployeeValidation(), employeeController.createEmployee);
 
 // Get all employees
 router.get('/employees', authenticateRole('admin'), employeeController.getAllEmployees);
