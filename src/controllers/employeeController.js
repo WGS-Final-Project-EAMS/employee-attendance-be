@@ -13,10 +13,11 @@ exports.createEmployee = async (req, res) => {
             phone_number,
             position,
             department,
-            profile_picture_url,
             manager_id,
             employment_date,
         } = req.body;
+
+        const profilePictureUrl = req.file ? req.file.path : null;
 
         const length = 12;
       
@@ -41,7 +42,7 @@ exports.createEmployee = async (req, res) => {
                 phone_number,
                 position,
                 department,
-                profile_picture_url,
+                profile_picture_url: profilePictureUrl,
                 manager_id: manager_id || null,
                 employment_date: new Date(employment_date),
             },
@@ -99,7 +100,8 @@ exports.getInactiveEmployees = async (req, res) => {
                 }
             },
             include: {
-                user: true,  // include user data for each employee
+                user: true,
+                manager: true,
             },
         });
         res.status(200).json(employees);
@@ -152,27 +154,49 @@ exports.updateEmployee = async (req, res) => {
     const { employee_id } = req.params;
     const {
         user_id,
+        username, email,
         full_name,
         phone_number,
-        profile_picture_url,
         position,
         department,
         manager_id,
         employment_date,
-        is_active,
     } = req.body;
 
+    const is_active = req.body.is_active === "true";
+
+    const profilePictureUrl = req.file ? req.file.path : null;
+
     try {
+        // Pastikan employee dengan employee_id ada
+        const existingEmployee = await prisma.employee.findUnique({
+            where: { employee_id },
+        });
+
+        if (!existingEmployee) {
+            return res.status(404).json({ error: "Employee not found" });
+        }
+
+        // Update user data
+        const user = await prisma.user.update({
+            where: { user_id },
+            data: {
+                username,
+                email,
+                is_active,
+            },
+        });
+        
         const updatedEmployee = await prisma.employee.update({
             where: { employee_id },
             data: {
                 user_id,
                 full_name,
                 phone_number,
-                profile_picture_url,
+                profile_picture_url: profilePictureUrl || existingEmployee.profile_picture_url,
                 position,
                 department,
-                manager_id,
+                manager_id: manager_id || null,
                 employment_date,
             },
         });
@@ -228,8 +252,18 @@ exports.deleteEmployee = async (req, res) => {
     const { employee_id } = req.params;
 
     try {
+        const employee = await prisma.employee.findUnique({
+            where: { employee_id },
+            select: { user_id: true }
+        });
+        
         const deletedEmployee = await prisma.employee.delete({
             where: { employee_id },
+        });
+
+        // Delete user data
+        await prisma.user.delete({
+            where: { user_id: employee.user_id },
         });
 
         res.status(204).json({ deletedEmployee });
