@@ -5,16 +5,14 @@ const crypto = require('crypto');
 const { validationResult } = require('express-validator');
 const errorLogs = require('../utils/errorLogs');
 const { transport } = require('../utils/emailTransporter');
+const { handleValidationErrors } = require('../utils/validationUtil');
 
 // Create Admin
 exports.createAdmin = async (req, res) => {
-  const errors = validationResult(req);
-  const errorMessages = errors.array().reduce((acc, error) => {
-      acc[error.path] = error.msg;
-      return acc;
-  }, {});
+  // Input error handling
+  const { isValid, errorMessages } = handleValidationErrors(req);
 
-  if (!errors.isEmpty()) {
+  if (!isValid) {
       return res.status(400).json({ error: errorMessages });
   }
 
@@ -100,6 +98,13 @@ exports.createAdmin = async (req, res) => {
 
 // Update Admin
 exports.updateAdmin = async (req, res) => {
+  // Input error handling
+  const { isValid, errorMessages } = handleValidationErrors(req);
+
+  if (!isValid) {
+      return res.status(400).json({ error: errorMessages });
+  }
+
   const { admin_id } = req.params;
   const { user_id, username, email, assigned_by, updated_by, full_name, phone_number } = req.body;
   const is_active = req.body.is_active === "true";

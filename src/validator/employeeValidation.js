@@ -1,6 +1,6 @@
 const { body } = require('express-validator');
 
-exports.createEmployeeValidation = () => {
+exports.employeeFormValidation = () => {
     return [
         body('email')
             .trim()

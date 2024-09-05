@@ -1,6 +1,6 @@
 const { body } = require('express-validator');
 
-exports.createAdminValidation = () => {
+exports.adminFormValidation = () => {
     return [
         body('role')
             .trim()
