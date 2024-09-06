@@ -26,3 +26,25 @@ exports.authenticateRole = (requiredRole) => {
         }
     };
 };
+
+// Middleware generik untuk memeriksa peran
+exports.authenticateUser = () => {
+    return (req, res, next) => {
+        const authHeader = req.header('Authorization');
+
+        if (!authHeader) {
+            return res.status(401).json({ error: `Authorization header is missing.` });
+        }
+
+        const token = authHeader.replace('Bearer ', '');
+
+        try {
+            const decoded = jwt.verify(token, SECRET_KEY);
+
+            req.user = decoded;
+            next();
+        } catch (error) {
+            res.status(401).json({ error: 'Invalid or expired token.' });
+        }
+    };
+};
