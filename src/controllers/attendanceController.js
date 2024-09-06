@@ -18,6 +18,8 @@ const getEmployeeByUserId = async (user_id) => {
 // Clock-in
 exports.clockIn = async (req, res) => {
     const { user_id } = req.user;
+    const { latitude, longitude } = req.body.location;
+    const clock_in_location = `${latitude}, ${longitude}`;
 
     try {
         const today = new Date();
@@ -42,6 +44,7 @@ exports.clockIn = async (req, res) => {
             data: {
                 employee_id: employee.employee_id,
                 clock_in_time: new Date(),
+                clock_in_location,
                 date: today,
                 status: 'present',
             },
@@ -62,6 +65,8 @@ exports.clockIn = async (req, res) => {
 // Clock-out
 exports.clockOut = async (req, res) => {
     const { user_id } = req.user;
+    const { latitude, longitude } = req.body.location;
+    const clock_out_location = `${latitude}, ${longitude}`;
 
     try {
         const today = new Date();
@@ -85,6 +90,7 @@ exports.clockOut = async (req, res) => {
             where: { attendance_id: attendance.attendance_id },
             data: {
                 clock_out_time: new Date(),
+                clock_out_location
             },
         });
 
