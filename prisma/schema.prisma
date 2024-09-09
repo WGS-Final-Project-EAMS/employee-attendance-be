@@ -17,7 +17,6 @@ model User {
   updated_at        DateTime @updatedAt
   is_active        Boolean @default(true)
   employees         Employee[]
-  leaveRequests     LeaveRequest[]
   adminManagements  AdminManagement[]
   errorLogs         ErrorLog[]
 
@@ -47,6 +46,8 @@ model Employee {
   AttendanceRecap AttendanceRecap[]
 
   Employee Employee[] @relation("ManagerEmployee")
+
+  LeaveRequest LeaveRequest[] @relation("Manager")
 }
 
 model Attendance {
@@ -67,6 +68,7 @@ model Attendance {
 model LeaveRequest {
   leave_request_id String   @id @default(uuid())
   employee_id      String
+  manager_id       String
   leave_type       LeaveType
   leave_reason     String
   start_date       DateTime
@@ -74,9 +76,8 @@ model LeaveRequest {
   status           LeaveRequestStatus
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
-  approved_by      String?
   employee         Employee @relation(fields: [employee_id], references: [employee_id])
-  approver         User?    @relation(fields: [approved_by], references: [user_id])
+  manager          Employee @relation("Manager", fields: [manager_id], references: [employee_id])
 }
 
 model AttendanceRecap {
