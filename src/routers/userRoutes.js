@@ -7,7 +7,7 @@ const { authenticateUser } = require('../middleware/authMiddleware');
 // router.put('/api/admins/:admin_id', userController.updateAdmin);
 // router.delete('/api/admins/:admin_id', userController.deleteAdmin);
 router.get('/users', userController.getAllUsers);
-router.get('/user/:user_id', userController.getUserById);
+router.get('/user', authenticateUser(), userController.getUserById);
 router.put('/user/change-password', authenticateUser(), userController.changePassword);
 // router.get('/admin/:admin_id', userController.getAdminById);
 

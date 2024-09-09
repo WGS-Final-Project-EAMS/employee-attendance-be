@@ -20,7 +20,7 @@ exports.getAllUsers = async (req, res) => {
   
 // Get User by User id
 exports.getUserById = async (req, res) => {
-  const { user_id } = req.params;
+  const { user_id } = req.user;
   try {
     const user = await prisma.user.findMany({
       where: { user_id },
