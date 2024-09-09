@@ -6,6 +6,7 @@ const authRoutes = require('./routers/authRoutes');
 const userRoutes = require('./routers/userRoutes');
 const employeeRoutes = require('./routers/employeeRoutes');
 const attendanceRoutes = require('./routers/attendanceRoutes');
+const leaveRequestRoutes = require('./routers/leaveRequestRoutes');
 const errorLogRoutes = require('./routers/errorLogRoutes');
 const path = require('path');
 
@@ -41,6 +42,7 @@ app.use('/api', authRoutes);
 app.use('/api', userRoutes);
 app.use('/api', employeeRoutes);
 app.use('/api', attendanceRoutes);
+app.use('/api', leaveRequestRoutes);
 app.use('/api', errorLogRoutes);
 
 // Default empty routes
