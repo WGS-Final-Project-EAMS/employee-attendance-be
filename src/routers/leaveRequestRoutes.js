@@ -15,4 +15,7 @@ router.get('/approval', authenticateRole('employee'), leaveRequestController.get
 // Approve or reject a leave request (for managers/approvers)
 router.patch('/leave-requests/:leave_request_id/status', authenticateRole('employee'), leaveRequestController.updateLeaveRequestStatus);
 
+// Approve or reject a leave request (for managers/approvers)
+router.delete('/leave-requests/:leave_request_id', authenticateRole('employee'), leaveRequestController.cancelLeaveRequest);
+
 module.exports = router;

@@ -117,6 +117,46 @@ exports.updateLeaveRequestStatus = async (req, res) => {
     }
 };
 
+// Cancel leave requests
+exports.cancelLeaveRequest = async (req, res) => {
+    const { user_id } = req.user;
+    const { leave_request_id } = req.params;
+
+    try {
+        // Fetch leave request by leave_request_id and user_id
+        const leaveRequest = await prisma.leaveRequest.findFirst({
+            where: {
+                leave_request_id,
+                employee: { user_id },  // Ensure it belongs to the logged-in employee
+            },
+        });
+
+        if (!leaveRequest) {
+            return res.status(404).json({ error: "Leave request not found" });
+        }
+
+        // Check if leave request status is still pending
+        if (leaveRequest.status !== 'pending') {
+            return res.status(400).json({ error: "Only pending leave requests can be canceled" });
+        }
+
+        // Delete the pending leave request
+        await prisma.leaveRequest.delete({
+            where: { leave_request_id },
+        });
+
+        res.status(200).json({ message: "Leave request canceled successfully" });
+    } catch (error) {
+        const { user_id } = req.user;
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'LeaveRequestError',
+            user_id,
+        });
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // Get leave requests for a specific employee
 exports.getEmployeeLeaveRequests = async (req, res) => {
     const { user_id } = req.user;
