@@ -13,6 +13,6 @@ router.get('/leave-requests', authenticateRole('employee'), leaveRequestControll
 router.get('/approval', authenticateRole('employee'), leaveRequestController.getApprovalList);
 
 // Approve or reject a leave request (for managers/approvers)
-router.patch('/leave-requests/:leaveRequest_id/status', authenticateRole('employee'), leaveRequestController.updateLeaveRequestStatus);
+router.patch('/leave-requests/:leave_request_id/status', authenticateRole('employee'), leaveRequestController.updateLeaveRequestStatus);
 
 module.exports = router;

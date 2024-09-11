@@ -45,19 +45,19 @@ exports.createLeaveRequest = async (req, res) => {
 
 // Approve or reject a leave request
 exports.updateLeaveRequestStatus = async (req, res) => {
-    const { leaveRequest_id } = req.params;
+    const { leave_request_id } = req.params;
     const { status } = req.body;  // 'approved' or 'rejected'
     const { user_id } = req.user;
 
     try {
-        const employee = await prisma.findFirst({
+        const employee = await prisma.employee.findFirst({
             where: { user_id },
             select: { employee_id: true }
         });
 
         // Fetch leave request
         const leaveRequest = await prisma.leaveRequest.findUnique({
-            where: { leaveRequest_id },
+            where: { leave_request_id },
         });
 
         if (!leaveRequest) {
@@ -71,7 +71,7 @@ exports.updateLeaveRequestStatus = async (req, res) => {
 
         // Update leave request status
         const updatedLeaveRequest = await prisma.leaveRequest.update({
-            where: { leaveRequest_id },
+            where: { leave_request_id },
             data: { status },
         });
 
