@@ -18,6 +18,36 @@ exports.createLeaveRequest = async (req, res) => {
             return res.status(404).json({ error: "Employee not found" });
         }
 
+        // Check if a leave request already exists in the date range
+        const existingLeaveRequest = await prisma.leaveRequest.findFirst({
+            where: {
+                employee_id: employee.employee_id,
+                OR: [
+                    {
+                        start_date: {
+                            lte: new Date(end_date),
+                        },
+                        end_date: {
+                            gte: new Date(start_date),
+                        }
+                    },
+                    {
+                        start_date: {
+                            gte: new Date(start_date),
+                            lte: new Date(end_date),
+                        },
+                    },
+                ],
+                status: {
+                    not: 'rejected', // Ignore rejected leave requests
+                },
+            },
+        });
+
+        if (existingLeaveRequest) {
+            return res.status(400).json({ error: "A leave request already exists in this date range." });
+        }
+
         // Create new leave request
         const leaveRequest = await prisma.leaveRequest.create({
             data: {
