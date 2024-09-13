@@ -139,6 +139,40 @@ exports.checkAttendanceStatus = async (req, res) => {
     }
 };
 
+// Get today's attendance for the logged-in employee
+exports.getTodayAttendance = async (req, res) => {
+    const { user_id } = req.user;
+
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Get employee by user_id
+        const employee = await getEmployeeByUserId(user_id);
+
+        // Fetch today's attendance for the employee
+        const todayAttendance = await prisma.attendance.findFirst({
+            where: {
+                employee_id: employee.employee_id,
+                date: today,
+            },
+        });
+
+        if (!todayAttendance) {
+            return res.status(404).json({ message: "No attendance record found for today." });
+        }
+
+        res.status(200).json(todayAttendance);
+    } catch (error) {
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'GetTodayAttendanceError',
+            user_id,
+        });
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // Get attendance history
 exports.getAttendanceHistory = async (req, res) => {
     const { user_id } = req.user;
