@@ -171,8 +171,8 @@ model Streak {
 
 model OfficeSettings {
   settings_id      String   @id @default(uuid())
-  office_start_time DateTime
-  office_end_time   DateTime
+  office_start_time String
+  office_end_time   String
   office_location   String
   monthly_recap_day Int      // Hari dalam sebulan ketika rekap bulanan dilakukan
   created_at       DateTime @default(now())
