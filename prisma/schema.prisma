@@ -169,6 +169,16 @@ model Streak {
   employee         Employee @relation(fields: [employee_id], references: [employee_id])
 }
 
+model OfficeSettings {
+  settings_id      String   @id @default(uuid())
+  office_start_time DateTime
+  office_end_time   DateTime
+  office_location   String
+  monthly_recap_day Int      // Hari dalam sebulan ketika rekap bulanan dilakukan
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+}
+
 enum Role {
   super_admin
   admin
