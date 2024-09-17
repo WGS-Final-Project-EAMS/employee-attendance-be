@@ -26,6 +26,20 @@ exports.clockIn = async (req, res) => {
         // Get employee by user_Id
         const employee = await getEmployeeByUserId(user_id);
         
+        // Get office settings (for office_start_time)
+        const officeSettings = await prisma.officeSettings.findFirst();
+
+        if (!officeSettings) {
+            return res.status(400).json({ error: "Office settings not found." });
+        }
+
+        const officeStartTime = officeSettings.office_start_time;
+        
+        // Convert office_start_time to a Date object for today's date
+        const [startHour, startMinute] = officeStartTime.split(':');
+        const officeStartDateTime = new Date();
+        officeStartDateTime.setHours(startHour, startMinute, 0, 0);
+
         // Check if already clocked in today
         const existingAttendance = await prisma.attendance.findFirst({
             where: {
@@ -38,12 +52,22 @@ exports.clockIn = async (req, res) => {
             return res.status(400).json({ error: "Already clocked in today." });
         }
 
+        // Get current clock-in time
+        const clockInTime = new Date();
+
+        // Determine attendance status based on office_start_time
+        let status = 'present';
+        if (clockInTime > officeStartDateTime) {
+            status = 'late';
+        }
+
+        // Create attendance record
         const attendance = await prisma.attendance.create({
             data: {
                 employee_id: employee.employee_id,
-                clock_in_time: new Date(),
+                clock_in_time: clockInTime,
                 date: today,
-                status: 'present',
+                status: status, // 'present' or 'late'
             },
         });
 
