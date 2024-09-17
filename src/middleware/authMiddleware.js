@@ -15,7 +15,7 @@ exports.authenticateRole = (requiredRole) => {
         try {
             const decoded = jwt.verify(token, SECRET_KEY);
 
-            if (decoded.role !== requiredRole) {
+            if (!requiredRole.includes(decoded.role)) {
                 return res.status(403).json({ error: `Access denied. ${requiredRole} only.` });
             }
 

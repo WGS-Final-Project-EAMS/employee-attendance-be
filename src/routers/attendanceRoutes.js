@@ -8,11 +8,11 @@ const router = express.Router();
 // Routes for attendance tracking
 // For: employee
 // =================================
-router.post('/clock-in', authenticateRole('employee'), clockIn);
-router.post('/clock-out', authenticateRole('employee'), clockOut);
-router.get('/attendance-status', authenticateRole('employee'), checkAttendanceStatus);
-router.get('/today-attendance', authenticateRole('employee'), getTodayAttendance)
-router.get('/attendance-history', authenticateRole('employee'), getAttendanceHistory);
+router.post('/clock-in', authenticateRole(['employee']), clockIn);
+router.post('/clock-out', authenticateRole(['employee']), clockOut);
+router.get('/attendance-status', authenticateRole(['employee']), checkAttendanceStatus);
+router.get('/today-attendance', authenticateRole(['employee']), getTodayAttendance)
+router.get('/attendance-history', authenticateRole(['employee']), getAttendanceHistory);
 
 // ============================
 // Routes for attendance recap
