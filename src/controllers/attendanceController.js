@@ -25,7 +25,7 @@ exports.clockIn = async (req, res) => {
 
         // Get employee by user_Id
         const employee = await getEmployeeByUserId(user_id);
-        
+
         // Get office settings (for office_start_time)
         const officeSettings = await prisma.officeSettings.findFirst();
 
@@ -34,7 +34,7 @@ exports.clockIn = async (req, res) => {
         }
 
         const officeStartTime = officeSettings.office_start_time;
-        
+
         // Convert office_start_time to a Date object for today's date
         const [startHour, startMinute] = officeStartTime.split(':');
         const officeStartDateTime = new Date();
@@ -61,6 +61,87 @@ exports.clockIn = async (req, res) => {
             status = 'late';
         }
 
+        // Fetch current streak data
+        const currentStreakData = await prisma.streak.findFirst({
+            where: {
+                employee_id: employee.employee_id,
+            },
+        });
+
+        // Initialize streak values
+        let currentStreak = currentStreakData ? currentStreakData.current_streak : 0;
+        let longestStreak = currentStreakData ? currentStreakData.longest_streak : 0;
+        let lastStreakDate = currentStreakData ? new Date(currentStreakData.last_streak_date) : null;
+
+        // Streak logic - update streak only if status is 'present'
+        if (status === 'present') {
+            const yesterday = new Date();
+            yesterday.setDate(today.getDate() - 1);
+
+            // If no attendance yesterday or last streak was not yesterday, reset streak
+            if (!lastStreakDate || lastStreakDate < yesterday) {
+                currentStreak = 1; // Reset streak to 1
+            } else {
+                currentStreak += 1; // Increment streak
+            }
+
+            // Update longest streak if needed
+            if (currentStreak > longestStreak) {
+                longestStreak = currentStreak;
+            }
+
+            // If streak data exists, update it
+            if (currentStreakData) {
+                await prisma.streak.update({
+                    where: { streak_id: currentStreakData.streak_id }, // Use streak_id for update
+                    data: {
+                        current_streak: currentStreak,
+                        longest_streak: longestStreak,
+                        last_streak_date: today,
+                        reset_reason: 'none',
+                        updated_at: new Date(),
+                    },
+                });
+            } else {
+                // If no streak data exists, create a new streak record
+                await prisma.streak.create({
+                    data: {
+                        employee_id: employee.employee_id,
+                        current_streak: currentStreak,
+                        longest_streak: longestStreak,
+                        last_streak_date: today,
+                        reset_reason: 'none',
+                        last_reset_date: new Date(), // Reset logic could be added here for custom resets
+                    },
+                });
+            }
+        } else {
+            // Reset streak if late
+            if (currentStreakData) {
+                await prisma.streak.update({
+                    where: { streak_id: currentStreakData.streak_id }, // Use streak_id for reset
+                    data: {
+                        current_streak: 0,
+                        last_streak_date: today,
+                        reset_reason: 'late',
+                        last_reset_date: new Date(),
+                    },
+                });
+            } else {
+                // If no streak data exists, create a new streak record with reset streak
+                await prisma.streak.create({
+                    data: {
+                        employee_id: employee.employee_id,
+                        current_streak: 0,
+                        longest_streak: longestStreak,
+                        last_streak_date: today,
+                        last_reset_date: new Date(),
+                        reset_reason: 'late',
+                    },
+                });
+            }
+        }
+
         // Create attendance record
         const attendance = await prisma.attendance.create({
             data: {
@@ -68,10 +149,11 @@ exports.clockIn = async (req, res) => {
                 clock_in_time: clockInTime,
                 date: today,
                 status: status, // 'present' or 'late'
+                streak_updated: true, // Indicate that streak has been updated
             },
         });
 
-        res.status(201).json({ message: "Clocked in successfully", attendance });
+        res.status(201).json({ message: "Clocked in successfully", attendance, currentStreak, longestStreak });
     } catch (error) {
         await errorLogs({
             error_message: error.message,
