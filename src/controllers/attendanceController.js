@@ -76,7 +76,7 @@ exports.clockIn = async (req, res) => {
         // Streak logic - update streak only if status is 'present'
         if (status === 'present') {
             const yesterday = new Date();
-            yesterday.setDate(today.getDate() - 1);
+            yesterday.setDate(today.getUTCDate() - 1);
 
             // If no attendance yesterday or last streak was not yesterday, reset streak
             if (!lastStreakDate || lastStreakDate < yesterday) {
