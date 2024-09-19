@@ -317,6 +317,8 @@ exports.getAttendanceRecap = async (req, res) => {
 
         if (period === 'daily') {
             const selectedDate = new Date(date);
+            selectedDate.setHours(0, 0, 0, 0);
+            
             recaps = await prisma.attendance.findMany({
                 where: {
                     date: selectedDate,
