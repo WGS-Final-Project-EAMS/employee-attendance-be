@@ -298,3 +298,32 @@ exports.getAdminById = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// Get Admin by ID
+exports.getAdminByUserId = async (req, res) => {
+  const { user_id } = req.user;
+  
+  try {
+    const admin = await prisma.adminManagement.findFirst({
+      where: { user_id },
+      include: {
+        user: true,
+      },
+    });
+
+    if (admin) {
+      res.json(admin);
+    } else {
+      res.status(404).json({ error: 'Admin not found' });
+    }
+  } catch (error) {
+    
+    await errorLogs({
+      error_message: error.message,
+      error_type: 'GetAdminByIdError',
+      user_id,
+    });
+    
+    res.status(500).json({ error: error.message });
+  }
+};

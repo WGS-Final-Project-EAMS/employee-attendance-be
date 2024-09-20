@@ -24,6 +24,9 @@ router.get('/admins/non-active', authenticateRole(['super_admin']), adminControl
 // Get admin by id
 router.get('/admin/:admin_id', authenticateRole(['super_admin']), adminController.getAdminById);
 
+// Get admin by user id
+router.get('/user-admin', authenticateRole(['super_admin', 'admin']), adminController.getAdminByUserId);
+
 // Hard delete admin
 router.delete('/admin/:admin_id', authenticateRole(['super_admin']), adminController.deleteAdmin);
 
