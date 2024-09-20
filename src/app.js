@@ -11,6 +11,7 @@ const officeSettingsRoutes = require('./routers/officeSettingsRoutes');
 const streakRoutes = require('./routers/streakRoutes');
 const errorLogRoutes = require('./routers/errorLogRoutes');
 const generateAttendanceRecap = require('./job/attendanceRecapJob');
+const checkAbsentSchedule = require('./job/checkAbsentJob');
 const path = require('path');
 
 const app = express();
@@ -38,6 +39,7 @@ app.use((req, res, next) => {
 });
 
 generateAttendanceRecap();
+checkAbsentSchedule();
 
 app.use('/api/uploads', express.static(path.join(__dirname, '../uploads')));
 

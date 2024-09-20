@@ -381,3 +381,44 @@ exports.getAttendanceRecap = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+exports.checkAbsentEmployees = async () => {
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Ambil semua employee yang belum clock-in hari ini
+        const absentEmployees = await prisma.employee.findMany({
+            where: {
+                attendance: {
+                    none: {
+                        date: today,
+                    },
+                },
+                leaveRequest: {
+                    none: {
+                        start_date: { lte: today },
+                        end_date: { gte: today },
+                        status: 'approved',
+                    },
+                },
+            },
+            include: {
+                attendance: true,
+            },
+        });
+
+        for (const employee of absentEmployees) {
+            // Jika tidak clock-in dan tidak ada izin, maka tandai absent
+            await prisma.attendance.create({
+                data: {
+                    employee_id: employee.id,
+                    date: today,
+                    status: 'absent',
+                },
+            });
+        }
+    } catch (error) {
+        console.error('Error checking absent employees:', error);
+    }
+};
