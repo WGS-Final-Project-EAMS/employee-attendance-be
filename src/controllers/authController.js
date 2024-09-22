@@ -54,7 +54,7 @@ exports.login = async (req, res) => {
         {
             user_id: user.user_id,
             email: user.email,
-            role: user.role,
+            roles: user.roles,
         },
             SECRET_KEY,
         { expiresIn: '7h' }
@@ -88,8 +88,9 @@ exports.access_resource = async (req, res) => {
       {
         success: true,
         data: {
-          userId: decodedToken.userId,
-          email: decodedToken.email
+          user_id: decodedToken.user_id,
+          email: decodedToken.email,
+          roles: decodedToken.roles,
         }
       }
     );

@@ -16,7 +16,7 @@ exports.createAdmin = async (req, res) => {
       return res.status(400).json({ error: errorMessages });
   }
 
-  const { username, role, email, assigned_by, full_name, phone_number } = req.body;
+  const { username, email, assigned_by, full_name, phone_number } = req.body;
   const profilePictureUrl = req.file ? req.file.path : null;
   const length = 12;
   
@@ -52,47 +52,64 @@ exports.createAdmin = async (req, res) => {
   };
 
   try {
-      
-      // Create a new user
-      const user = await prisma.user.create({
-          data: {
-              username,
-              password_hash,
-              role,
-              email,
-          },
-      });
-      
-      // Create admin management entry
-      const admin = await prisma.adminManagement.create({
-          data: {
-              user_id: user.user_id,
-              assigned_by,
-              full_name,
-              phone_number,
-              profile_picture_url: profilePictureUrl,
-          },
-      });
-    
-      transport.sendMail(mailOptions, function(error, info){
-        if (error) {
-            console.log({error: error.message})
-        } else {
-          console.log('Email sent: ' + info.response);
-        }
-      });
-  
-      res.status(201).json(admin);
-  } catch (error) {
-      const { user_id } = req.user;
+    // Check is user exist
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
 
-      await errorLogs({
-        error_message: error.message,
-        error_type: 'CreateAdminError',
-        user_id,
-      });
+    let user;
     
-      res.status(500).json({ error: error.message });
+    // User not exist
+    if (!existingUser) {
+      // Create a new user
+      user = await prisma.user.create({
+        data: {
+          username,
+          password_hash,
+          roles: { set: ['admin'] },
+          email,
+          assigned_by,
+          full_name,
+          phone_number,
+          profile_picture_url: profilePictureUrl,
+        },
+      });
+    } else {// User exist
+      // Check is user already has admin role
+      if (!existingUser.roles.includes('admin')) {
+        user = await prisma.user.update({
+          where: { email },
+          data: {
+              roles: { push: 'admin' }, // Tambah role admin
+          },
+        });
+      } else {
+        // Already has admin role
+        return res.status(400).json({ error: 'User already has admin role' });
+      }
+      
+    }
+  
+    // Send email & password to user email
+    // transport.sendMail(mailOptions, function(error, info){
+    //   if (error) {
+    //       console.log({error: error.message})
+    //   } else {
+    //     console.log('Email sent: ' + info.response);
+    //   }
+    // });
+
+    res.status(201).json(user);
+  } catch (error) {
+    const { user_id } = req.user;
+
+    await errorLogs({
+      error_message: error.message,
+      error_type: 'CreateAdminError',
+      user_id,
+    });
+  
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -105,8 +122,8 @@ exports.updateAdmin = async (req, res) => {
       return res.status(400).json({ error: errorMessages });
   }
 
-  const { admin_id } = req.params;
-  const { user_id, username, email, assigned_by, updated_by, full_name, phone_number } = req.body;
+  const { user_id, username, email, assigned_by, full_name, phone_number } = req.body;
+  const userLogin = req.user;
   const is_active = req.body.is_active === "true";
   
   const profilePictureUrl = req.file ? req.file.path : null;
@@ -114,8 +131,8 @@ exports.updateAdmin = async (req, res) => {
   
   try {
     // Pastikan admin dengan admin_id ada
-    const existingAdmin = await prisma.adminManagement.findUnique({
-      where: { admin_id },
+    const existingAdmin = await prisma.user.findUnique({
+      where: { user_id },
     });
 
     if (!existingAdmin) {
@@ -129,23 +146,27 @@ exports.updateAdmin = async (req, res) => {
         username,
         email,
         is_active,
-      },
-    });
-
-    // Update admin data
-    const updatedAdmin = await prisma.adminManagement.update({
-      where: { admin_id },
-      data: {
-        user: { connect: { user_id } },
-        assignedBy: { connect: { user_id: assigned_by } },  // Relasi assignedBy
-        updated_by,
+        assignedBy: { connect: { user_id: assigned_by } },
         full_name,
         phone_number,
         profile_picture_url: profilePictureUrl || existingAdmin.profile_picture_url,
       },
     });
 
-    res.json(updatedAdmin);
+    // Update admin data
+    // const updatedAdmin = await prisma.adminManagement.update({
+    //   where: { admin_id },
+    //   data: {
+    //     user: { connect: { user_id } },
+    //     assignedBy: { connect: { user_id: assigned_by } },  // Relasi assignedBy
+    //     updated_by,
+    //     full_name,
+    //     phone_number,
+    //     profile_picture_url: profilePictureUrl || existingAdmin.profile_picture_url,
+    //   },
+    // });
+
+    res.json(user);
   } catch (error) {
     const { user_id } = req.user;
 

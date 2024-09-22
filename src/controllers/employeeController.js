@@ -58,17 +58,39 @@ exports.createEmployee = async (req, res) => {
     };
 
     try {
+        // Check is user exist
+        const existingUser = await prisma.user.findUnique({
+            where: { email }
+        });
 
-        // Create a new user
-        const user = await prisma.user.create({
+        // User not exist
+        if (!existingUser) {
+            // Create a new user
+            user = await prisma.user.create({
             data: {
                 username,
                 password_hash,
-                role: "employee",
+                roles: { set: ['employee'] },
                 email,
             },
-        });
+            });
+        } else {// User exist
+            // Check is user already has employee role
+            if (!existingUser.roles.includes('employee')) {
+            user = await prisma.user.update({
+                where: { email },
+                data: {
+                    roles: { push: 'employee' }, // Tambah role employee
+                },
+            });
+            } else {
+            // Already has employee role
+            return res.status(400).json({ error: 'User already has employee role' });
+            }
+            
+        }
 
+        // Create new employee
         const newEmployee = await prisma.employee.create({
             data: {
                 user_id: user.user_id,
@@ -82,13 +104,14 @@ exports.createEmployee = async (req, res) => {
             },
         });
 
-        transport.sendMail(mailOptions, function(error, info){
-            if (error) {
-                console.log({error: error.message})
-            } else {
-                console.log('Email sent: ' + info.response);
-            }
-        });
+        // Sen email & password to user email
+        // transport.sendMail(mailOptions, function(error, info){
+        //     if (error) {
+        //         console.log({error: error.message})
+        //     } else {
+        //         console.log('Email sent: ' + info.response);
+        //     }
+        // });
 
         res.status(201).json(newEmployee);
     } catch (error) {
