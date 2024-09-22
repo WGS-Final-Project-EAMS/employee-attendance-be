@@ -1,182 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model User {
-  user_id           String   @id @default(uuid())
-  username          String   @unique
-  password_hash     String
-  role              Role
-  email             String   @unique
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
-  is_active        Boolean @default(true)
-  employees         Employee[]
-  adminManagements  AdminManagement[]
-  errorLogs         ErrorLog[]
-
-  Notification Notification[]
-
-  AdminManagement AdminManagement[] @relation("AssignedBy")
+  user_id             String         @id @default(uuid())
+  username            String         @unique
+  password_hash       String
+  email               String         @unique
+  created_at          DateTime       @default(now())
+  updated_at          DateTime       @updatedAt
+  is_active           Boolean        @default(true)
+  roles               Role[]
+  full_name           String
+  phone_number        String?
+  profile_picture_url String?
+  assigned_by         String?
+  employees           Employee?
+  errorLogs           ErrorLog[]
+  Notification        Notification[]
+  assignedBy          User?          @relation("AssignedByUser", fields: [assigned_by], references: [user_id], onDelete: Restrict)
+  User                User[]         @relation("AssignedByUser")
 }
 
 model Employee {
-  employee_id       String   @id @default(uuid())
-  user_id           String   @unique
-  full_name         String
-  phone_number      String?
-  profile_picture_url String?
+  employee_id       String            @id @default(uuid())
+  user_id           String            @unique
   position          String
   department        String
   manager_id        String?
   employment_date   DateTime
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
-  user              User     @relation(fields: [user_id], references: [user_id])
-  manager           Employee?@relation("ManagerEmployee", fields: [manager_id], references: [employee_id])
+  created_at        DateTime          @default(now())
+  updated_at        DateTime          @updatedAt
   attendanceRecords Attendance[]
+  AttendanceRecap   AttendanceRecap[]
+  manager           Employee?         @relation("ManagerEmployee", fields: [manager_id], references: [employee_id])
+  Employee          Employee[]        @relation("ManagerEmployee")
+  user              User              @relation(fields: [user_id], references: [user_id])
   leaveRequests     LeaveRequest[]
+  LeaveRequest      LeaveRequest[]    @relation("Manager")
   streaks           Streak[]
-
-  AttendanceRecap AttendanceRecap[]
-
-  Employee Employee[] @relation("ManagerEmployee")
-
-  LeaveRequest LeaveRequest[] @relation("Manager")
 }
 
 model Attendance {
-  attendance_id    String   @id @default(uuid())
-  employee_id      String
-  clock_in_time    DateTime
-  clock_out_time   DateTime?
-  clock_in_location String?
+  attendance_id      String           @id @default(uuid())
+  employee_id        String
+  clock_in_time      DateTime
+  clock_out_time     DateTime?
+  clock_in_location  String?
   clock_out_location String?
-  status           AttendanceStatus
-  date             DateTime
-  streak_updated   Boolean  @default(false)
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
-  employee         Employee @relation(fields: [employee_id], references: [employee_id])
+  status             AttendanceStatus
+  date               DateTime
+  streak_updated     Boolean          @default(false)
+  created_at         DateTime         @default(now())
+  updated_at         DateTime         @updatedAt
+  employee           Employee         @relation(fields: [employee_id], references: [employee_id])
 }
 
 model LeaveRequest {
-  leave_request_id String   @id @default(uuid())
+  leave_request_id String             @id @default(uuid())
   employee_id      String
-  manager_id       String
   leave_type       LeaveType
   leave_reason     String
   start_date       DateTime
   end_date         DateTime
   status           LeaveRequestStatus
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
-  employee         Employee @relation(fields: [employee_id], references: [employee_id])
-  manager          Employee @relation("Manager", fields: [manager_id], references: [employee_id])
+  created_at       DateTime           @default(now())
+  updated_at       DateTime           @updatedAt
+  manager_id       String
+  employee         Employee           @relation(fields: [employee_id], references: [employee_id])
+  manager          Employee           @relation("Manager", fields: [manager_id], references: [employee_id])
 }
 
 model AttendanceRecap {
-  recap_id         String   @id @default(uuid())
-  employee_id      String
-  month            Int
-  year             Int
+  recap_id           String   @id @default(uuid())
+  employee_id        String
+  month              Int
+  year               Int
   total_days_present Int
-  total_days_absent Int
-  total_days_late  Int
-  total_work_hours Float
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
-  employee         Employee @relation(fields: [employee_id], references: [employee_id])
+  total_days_absent  Int
+  total_days_late    Int
+  total_work_hours   Float
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+  employee           Employee @relation(fields: [employee_id], references: [employee_id])
 }
 
 model ErrorLog {
-  error_log_id     String   @id @default(uuid())
-  error_message    String
-  error_type       String
-  error_timestamp  DateTime
-  user_id          String?
-  created_at       DateTime @default(now())
-  user             User?    @relation(fields: [user_id], references: [user_id])
-}
-
-model AdminManagement {
-  admin_id         String   @id @default(uuid())
-  user_id          String
-  full_name         String
-  phone_number      String?
-  profile_picture_url String?
-  assigned_by      String
-  updated_by       String?
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
-  user             User     @relation(fields: [user_id], references: [user_id])
-  assignedBy       User     @relation("AssignedBy", fields: [assigned_by], references: [user_id])
+  error_log_id    String   @id @default(uuid())
+  error_message   String
+  error_type      String
+  error_timestamp DateTime
+  user_id         String?
+  created_at      DateTime @default(now())
+  user            User?    @relation(fields: [user_id], references: [user_id])
 }
 
 model AttendanceStatistics {
-  statistic_id     String   @id @default(uuid())
-  date             DateTime
-  total_employees  Int
-  total_present    Int
-  total_absent     Int
-  total_late       Int
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
+  statistic_id    String   @id @default(uuid())
+  date            DateTime
+  total_employees Int
+  total_present   Int
+  total_absent    Int
+  total_late      Int
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
 }
 
 model Notification {
-  notification_id  String   @id @default(uuid())
-  user_id          String
-  title            String
-  message          String
-  is_read          Boolean  @default(false)
-  created_at       DateTime @default(now())
-  user             User     @relation(fields: [user_id], references: [user_id])
+  notification_id String   @id @default(uuid())
+  user_id         String
+  title           String
+  message         String
+  is_read         Boolean  @default(false)
+  created_at      DateTime @default(now())
+  user            User     @relation(fields: [user_id], references: [user_id])
 }
 
 model Department {
-  department_id    String   @id @default(uuid())
-  department_name  String
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
-  positions        Position[]
+  department_id   String     @id @default(uuid())
+  department_name String
+  created_at      DateTime   @default(now())
+  updated_at      DateTime   @updatedAt
+  positions       Position[]
 }
 
 model Position {
-  position_id      String   @id @default(uuid())
-  position_name    String
-  department_id    String
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
-  department       Department @relation(fields: [department_id], references: [department_id])
+  position_id   String     @id @default(uuid())
+  position_name String
+  department_id String
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+  department    Department @relation(fields: [department_id], references: [department_id])
 }
 
 model Streak {
-  streak_id        String   @id @default(uuid())
+  streak_id        String            @id @default(uuid())
   employee_id      String
   current_streak   Int
   longest_streak   Int
   last_streak_date DateTime
   reset_reason     StreakResetReason
   last_reset_date  DateTime
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
-  employee         Employee @relation(fields: [employee_id], references: [employee_id])
+  created_at       DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+  employee         Employee          @relation(fields: [employee_id], references: [employee_id])
 }
 
 model OfficeSettings {
-  settings_id      String   @id @default(uuid())
+  settings_id       String   @id @default(uuid())
   office_start_time String
   office_end_time   String
   office_location   String
-  monthly_recap_day Int      // Hari dalam sebulan ketika rekap bulanan dilakukan
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
+  monthly_recap_day Int
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
 }
 
 enum Role {
