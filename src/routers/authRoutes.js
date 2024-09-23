@@ -6,6 +6,12 @@ const { loginValidation } = require('../validator/authValidation');
 // Login
 router.post('/login', loginValidation(), authController.login);
 
+// Login as admin
+router.post('/admin-login', loginValidation(), authController.loginAdmin);
+
+// Login as employee
+router.post('/employee-login', loginValidation(), authController.loginEmployee);
+
 // Logout
 router.post('/logout', authController.logout)
 
