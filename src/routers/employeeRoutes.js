@@ -18,7 +18,7 @@ router.get('/employees/inactive', authenticateRole(['admin']), employeeControlle
 router.get('/employees/:employee_id', authenticateRole(['admin']), employeeController.getEmployeeById);
 
 // Update an employee
-router.put('/employees/:employee_id', authenticateRole(['admin']), upload.single('profile_picture_url'), employeeFormValidation(), employeeController.updateEmployee);
+router.put('/employees/:user_id', authenticateRole(['admin']), upload.single('profile_picture_url'), employeeFormValidation(), employeeController.updateEmployee);
 
 // Activate or deactivate an employee
 router.patch('/employees/:employee_id/status', authenticateRole(['admin']), employeeController.setEmployeeStatus);

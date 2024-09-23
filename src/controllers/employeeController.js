@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const errorLogs = require('../utils/errorLogs');
 const { transport } = require('../utils/emailTransporter');
@@ -14,6 +15,7 @@ exports.createEmployee = async (req, res) => {
         return res.status(400).json({ error: errorMessages });
     }
 
+    // Get request body
     const {
         email,
         username,
@@ -27,11 +29,17 @@ exports.createEmployee = async (req, res) => {
 
     const profilePictureUrl = req.file ? req.file.path : null;
 
+    // Get admin user_id
+    const assigned_by = req.user.user_id;
+
+    // Generate random password
     const length = 12;
-  
-    const password_hash = crypto.randomBytes(Math.ceil(length / 2))
+    const password = crypto.randomBytes(Math.ceil(length / 2))
         .toString('hex') // Convert to hexadecimal format
         .slice(0, length); // Return required number of characters
+    
+    // Hash the password
+    const password_hash = await bcrypt.hash(password, 10);
     
     // Configure the mailoptions object
     const text = `
@@ -40,7 +48,7 @@ exports.createEmployee = async (req, res) => {
         Welcome to Ngabsen! Your account has been successfully created. Below are your login details:
 
         Email: ${email}
-        Password: ${password_hash}
+        Password: ${password}
 
         Please keep this information secure and do not share it with anyone. You can log in to the application at any time using the above credentials.
 
@@ -60,49 +68,51 @@ exports.createEmployee = async (req, res) => {
     try {
         // Check is user exist
         const existingUser = await prisma.user.findUnique({
-            where: { email }
+            where: { email },
+            select: { user_id: true },
         });
 
         // User not exist
         if (!existingUser) {
             // Create a new user
             user = await prisma.user.create({
-            data: {
-                username,
-                password_hash,
-                roles: { set: ['employee'] },
-                email,
-            },
+                data: {
+                    username,
+                    password_hash,
+                    roles: { set: ['employee'] },
+                    email,
+                    assigned_by,
+                    full_name,
+                    phone_number,
+                    profile_picture_url: profilePictureUrl,
+                },
+            });
+
+            // Create employee account
+            employee = await prisma.employee.create({
+                data: {
+                  user_id: user.user_id,
+                  position,
+                  department,
+                  manager_id: manager_id || null,
+                  employment_date: new Date(employment_date),
+                },
             });
         } else {// User exist
             // Check is user already has employee role
             if (!existingUser.roles.includes('employee')) {
-            user = await prisma.user.update({
-                where: { email },
-                data: {
-                    roles: { push: 'employee' }, // Tambah role employee
-                },
-            });
+                user = await prisma.user.update({
+                    where: { email },
+                    data: {
+                        roles: { push: 'employee' }, // Tambah role employee
+                    },
+                });
             } else {
-            // Already has employee role
-            return res.status(400).json({ error: 'User already has employee role' });
+                // Already has employee role
+                return res.status(400).json({ error: 'User already has employee role' });
             }
             
         }
-
-        // Create new employee
-        const newEmployee = await prisma.employee.create({
-            data: {
-                user_id: user.user_id,
-                full_name,
-                phone_number,
-                position,
-                department,
-                profile_picture_url: profilePictureUrl,
-                manager_id: manager_id || null,
-                employment_date: new Date(employment_date),
-            },
-        });
 
         // Sen email & password to user email
         // transport.sendMail(mailOptions, function(error, info){
@@ -113,7 +123,7 @@ exports.createEmployee = async (req, res) => {
         //     }
         // });
 
-        res.status(201).json(newEmployee);
+        res.status(201).json({ user: user, employee: employee, password: password });
     } catch (error) {
         const { user_id } = req.user;
 
@@ -223,26 +233,31 @@ exports.updateEmployee = async (req, res) => {
         return res.status(400).json({ error: errorMessages });
     }
 
-    const { employee_id } = req.params;
+    // Get employee id from paramteres
+    const { user_id } = req.params;
+
+    // Get data from request body
     const {
-        user_id,
         username, email,
         full_name,
         phone_number,
         position,
         department,
         manager_id,
+        assigned_by,
         employment_date,
     } = req.body;
 
+    // Is user active
     const is_active = req.body.is_active === "true";
 
+    // Get profile picture url path
     const profilePictureUrl = req.file ? req.file.path : null;
 
     try {
         // Pastikan employee dengan employee_id ada
         const existingEmployee = await prisma.employee.findUnique({
-            where: { employee_id },
+            where: { user_id },
         });
 
         if (!existingEmployee) {
@@ -256,16 +271,24 @@ exports.updateEmployee = async (req, res) => {
                 username,
                 email,
                 is_active,
-            },
-        });
-        
-        const updatedEmployee = await prisma.employee.update({
-            where: { employee_id },
-            data: {
-                user_id,
+                assignedBy: { connect: { user_id: assigned_by } },
                 full_name,
                 phone_number,
                 profile_picture_url: profilePictureUrl || existingEmployee.profile_picture_url,
+            },
+        });
+        
+        // Get employee
+        const employee = await prisma.employee.findUnique({
+            where: { user_id },
+            select: { employee_id: true },
+        });
+
+        // Update employee account
+        const updatedEmployee = await prisma.employee.update({
+            where: { employee_id: employee.employee_id },
+            data: {
+                user_id,
                 position,
                 department,
                 manager_id: manager_id || null,
@@ -273,7 +296,7 @@ exports.updateEmployee = async (req, res) => {
             },
         });
 
-        res.status(200).json(updatedEmployee);
+        res.status(200).json({user: user, employee: updatedEmployee });
     } catch (error) {
         const { user_id } = req.user;
 
