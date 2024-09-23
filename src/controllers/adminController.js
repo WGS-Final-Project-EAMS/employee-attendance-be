@@ -16,16 +16,17 @@ exports.createAdmin = async (req, res) => {
       return res.status(400).json({ error: errorMessages });
   }
 
-  const { username, email, assigned_by, full_name, phone_number } = req.body;
+  const { username, email, full_name, phone_number, position, department, manager_id, employment_date } = req.body;
   const profilePictureUrl = req.file ? req.file.path : null;
+  const assigned_by = req.user.user_id;
   const length = 12;
   
-  const password_hash = crypto.randomBytes(Math.ceil(length / 2))
+  const password = crypto.randomBytes(Math.ceil(length / 2))
       .toString('hex') // Convert to hexadecimal format
       .slice(0, length); // Return required number of characters
       
   // Hash the password
-  // const password_hash = await bcrypt.hash(password, 10);
+  const password_hash = await bcrypt.hash(password, 10);
 
   // Configure the mailoptions object
   const text = `
@@ -34,7 +35,7 @@ exports.createAdmin = async (req, res) => {
     Welcome to Ngabsen! Your account has been successfully created. Below are your login details:
 
     Email: ${email}
-    Password: ${password_hash}
+    Password: ${password}
 
     Please keep this information secure and do not share it with anyone. You can log in to the application at any time using the above credentials.
 
@@ -58,6 +59,7 @@ exports.createAdmin = async (req, res) => {
     });
 
     let user;
+    let employee;
     
     // User not exist
     if (!existingUser) {
@@ -66,7 +68,7 @@ exports.createAdmin = async (req, res) => {
         data: {
           username,
           password_hash,
-          roles: { set: ['admin'] },
+          roles: { set: ['admin', 'employee'] },
           email,
           assigned_by,
           full_name,
@@ -74,6 +76,18 @@ exports.createAdmin = async (req, res) => {
           profile_picture_url: profilePictureUrl,
         },
       });
+
+      // Create employee account
+      employee = await prisma.employee.create({
+        data: {
+          user_id: user.user_id,
+          position,
+          department,
+          manager_id,
+          employment_date,
+        },
+      });
+
     } else {// User exist
       // Check is user already has admin role
       if (!existingUser.roles.includes('admin')) {
@@ -91,15 +105,15 @@ exports.createAdmin = async (req, res) => {
     }
   
     // Send email & password to user email
-    // transport.sendMail(mailOptions, function(error, info){
-    //   if (error) {
-    //       console.log({error: error.message})
-    //   } else {
-    //     console.log('Email sent: ' + info.response);
-    //   }
-    // });
+    transport.sendMail(mailOptions, function(error, info){
+      if (error) {
+          console.log({error: error.message})
+      } else {
+        console.log('Email sent: ' + info.response);
+      }
+    });
 
-    res.status(201).json(user);
+    res.status(201).json({user: user, employee: employee, password: password});
   } catch (error) {
     const { user_id } = req.user;
 
@@ -121,13 +135,12 @@ exports.updateAdmin = async (req, res) => {
   if (!isValid) {
       return res.status(400).json({ error: errorMessages });
   }
-
-  const { user_id, username, email, assigned_by, full_name, phone_number } = req.body;
-  const userLogin = req.user;
+  
+  const { user_id } = req.params;
+  const { username, email, assigned_by, full_name, phone_number, position, department, manager_id, employment_date } = req.body;
   const is_active = req.body.is_active === "true";
   
   const profilePictureUrl = req.file ? req.file.path : null;
-  // const updated_by = req.user.user_id;
   
   try {
     // Pastikan admin dengan admin_id ada
@@ -153,20 +166,25 @@ exports.updateAdmin = async (req, res) => {
       },
     });
 
-    // Update admin data
-    // const updatedAdmin = await prisma.adminManagement.update({
-    //   where: { admin_id },
-    //   data: {
-    //     user: { connect: { user_id } },
-    //     assignedBy: { connect: { user_id: assigned_by } },  // Relasi assignedBy
-    //     updated_by,
-    //     full_name,
-    //     phone_number,
-    //     profile_picture_url: profilePictureUrl || existingAdmin.profile_picture_url,
-    //   },
-    // });
+    // Get employee
+    const employee = await prisma.employee.findUnique({
+      where: { user_id },
+      select: { employee_id: true },
+    });
 
-    res.json(user);
+    // Update employee account
+    const employeeUpdated = await prisma.employee.update({
+      where: {employee_id: employee.employee_id},
+      data: {
+        user_id: user_id,
+        position,
+        department,
+        manager_id,
+        employment_date,
+      },
+    });
+
+    res.status(200).json({ user: user, employee: employeeUpdated });
   } catch (error) {
     const { user_id } = req.user;
 
@@ -180,51 +198,16 @@ exports.updateAdmin = async (req, res) => {
   }
 };
 
-
-// Delete Admin (hard delete)
-exports.deleteAdmin = async (req, res) => {
-  const { admin_id } = req.params;
-  
-  try {
-    const admin = await prisma.adminManagement.findUnique({
-      where: { admin_id },
-      select: { user_id: true }
-    });
-
-    // Delete admin data
-    await prisma.adminManagement.delete({
-      where: { admin_id },
-    });
-
-    // Delete user data
-    await prisma.user.delete({
-      where: { user_id: admin.user_id },
-    });
-
-    res.status(204).send();
-  } catch (error) {
-    const { user_id } = req.user;
-
-    await errorLogs({
-      error_message: error.message,
-      error_type: 'DeleteAdminError',
-      user_id,
-    });
-
-    res.status(500).json({ error: error.message });
-  }
-};
-
 // Get List of Admins
 exports.getAllAdmins = async (req, res) => {
   try {
-    const admins = await prisma.adminManagement.findMany({
+    const admins = await prisma.user.findMany({
+      where: { roles: { has: 'admin' } }, // Only get user with roles admin
       include: {
-        user: true,  // include user data for each employee
         assignedBy: true, // include user assigner data for each employee
       },
     });
-    res.json(admins);
+    res.status(200).json(admins);
   } catch (error) {
     const { user_id } = req.user;
     
@@ -241,18 +224,18 @@ exports.getAllAdmins = async (req, res) => {
 // Get List of Active Admins
 exports.getActiveAdmins = async (req, res) => {
   try {
-    const admins = await prisma.adminManagement.findMany({
+    const admins = await prisma.user.findMany({
       where: {
-        user: {
-          is_active: true
-        }
+        roles: {
+          has: 'admin',
+        },
+        is_active: true,
       },
       include: {
-        user: true,  // include user data for each employee
         assignedBy: true, // include user assigner data for each employee
       },
     });
-    res.json(admins);
+    res.status(200).json(admins);
   } catch (error) {
     const { user_id } = req.user;
     
@@ -269,18 +252,18 @@ exports.getActiveAdmins = async (req, res) => {
 // Get List of Non-active Admins
 exports.getNonactiveAdmins = async (req, res) => {
   try {
-    const admins = await prisma.adminManagement.findMany({
+    const admins = await prisma.user.findMany({
       where: {
-        user: {
-          is_active: false
-        }
+        roles: {
+          has: 'admin'
+        },
+        is_active: false,
       },
       include: {
-        user: true,  // include user data for each employee
         assignedBy: true, // include user assigner data for each employee
       },
     });
-    res.json(admins);
+    res.status(200).json(admins);
   } catch (error) {
     const { user_id } = req.user;
     
@@ -296,14 +279,15 @@ exports.getNonactiveAdmins = async (req, res) => {
 
 // Get Admin by ID
 exports.getAdminById = async (req, res) => {
-  const { admin_id } = req.params;
+  const { user_id } = req.params;
   
   try {
-    const admin = await prisma.adminManagement.findUnique({
-      where: { admin_id },
+    const admin = await prisma.user.findUnique({
+      where: { user_id },
     });
+
     if (admin) {
-      res.json(admin);
+      res.status(200).json(admin);
     } else {
       res.status(404).json({ error: 'Admin not found' });
     }
@@ -320,20 +304,20 @@ exports.getAdminById = async (req, res) => {
   }
 };
 
-// Get Admin by ID
+// Get Admin by User Login
 exports.getAdminByUserId = async (req, res) => {
   const { user_id } = req.user;
   
   try {
-    const admin = await prisma.adminManagement.findFirst({
+    const admin = await prisma.user.findFirst({
       where: { user_id },
       include: {
-        user: true,
+        assignedBy: true,
       },
     });
 
     if (admin) {
-      res.json(admin);
+      res.status(200).json(admin);
     } else {
       res.status(404).json({ error: 'Admin not found' });
     }
@@ -345,6 +329,35 @@ exports.getAdminByUserId = async (req, res) => {
       user_id,
     });
     
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Delete Admin (hard delete)
+exports.deleteAdmin = async (req, res) => {
+  const { user_id } = req.params;
+  
+  try {
+    // Delete employee data
+    const employee = await prisma.employee.delete({
+      where: { user_id },
+    });
+
+    // Delete admin data
+    const user = await prisma.user.delete({
+      where: { user_id },
+    });
+
+    res.status(204).send();
+  } catch (error) {
+    const { user_id } = req.user;
+
+    await errorLogs({
+      error_message: error.message,
+      error_type: 'DeleteAdminError',
+      user_id,
+    });
+
     res.status(500).json({ error: error.message });
   }
 };

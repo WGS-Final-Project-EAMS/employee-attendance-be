@@ -49,10 +49,13 @@ exports.changePassword = async (req, res) => {
   }
 
   try {
+    // Hash the password
+    const password_hash = await bcrypt.hash(newPassword, 10);
+
     // Update password in database
     const updatedUser = await prisma.user.update({
       where: { user_id },
-      data: { password_hash: newPassword },
+      data: { password_hash },
     });
 
     // If success

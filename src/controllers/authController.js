@@ -1,4 +1,4 @@
-// const bcrypt = require('bcrypt');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const { validationResult } = require('express-validator');
@@ -32,12 +32,9 @@ exports.login = async (req, res) => {
         }
 
         // Compare the provided password with the stored hash
-        // const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-        const isPasswordValid = (inputPassword, storedPassword) => {
-            return inputPassword === storedPassword;
-        };
+        const isPasswordValid = await bcrypt.compare(password, user.password_hash);
 
-        if (!isPasswordValid(password, user.password_hash)) {
+        if (!isPasswordValid) {
             return res.status(401).json({ error: { general: "Invalid email or password" } });
         }
 

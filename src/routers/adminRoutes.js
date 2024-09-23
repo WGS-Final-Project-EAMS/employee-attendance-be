@@ -9,7 +9,7 @@ const { upload } = require('../middleware/multerMiddleware');
 router.post('/admin', authenticateRole(['super_admin']), upload.single('profile_picture_url'), adminFormValidation(), adminController.createAdmin);
 
 // Update an admin by id
-router.put('/admin/:admin_id', authenticateRole(['super_admin']), upload.single('profile_picture_url'), adminFormValidation(), adminController.updateAdmin);
+router.put('/admin/:user_id', authenticateRole(['super_admin']), upload.single('profile_picture_url'), adminFormValidation(), adminController.updateAdmin);
 // router.delete('/api/admins/:admin_id', adminController.deleteAdmin);
 
 // Get all admin
@@ -22,12 +22,12 @@ router.get('/admins/active', authenticateRole(['super_admin']), adminController.
 router.get('/admins/non-active', authenticateRole(['super_admin']), adminController.getNonactiveAdmins);
 
 // Get admin by id
-router.get('/admin/:admin_id', authenticateRole(['super_admin']), adminController.getAdminById);
+router.get('/admin/:user_id', authenticateRole(['super_admin']), adminController.getAdminById);
 
-// Get admin by user id
+// Get admin by user login
 router.get('/user-admin', authenticateRole(['super_admin', 'admin']), adminController.getAdminByUserId);
 
 // Hard delete admin
-router.delete('/admin/:admin_id', authenticateRole(['super_admin']), adminController.deleteAdmin);
+router.delete('/admin/:user_id', authenticateRole(['super_admin']), adminController.deleteAdmin);
 
 module.exports = router;
