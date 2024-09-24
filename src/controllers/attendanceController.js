@@ -206,6 +206,50 @@ exports.clockOut = async (req, res) => {
     }
 };
 
+// Cancel clock-out
+exports.cancelClockOut = async (req, res) => {
+    const { user_id } = req.user;
+
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Get employee by user_Id
+        const employee = await getEmployeeByUserId(user_id);
+
+        // Check if clock out exists for today
+        const attendance = await prisma.attendance.findFirst({
+            where: {
+                employee_id: employee.employee_id,
+                date: today,
+                clock_out_time: { not: null }, // Check if already clocked out
+            },
+        });
+
+        if (!attendance) {
+            return res.status(400).json({ error: "No clock-out record found or clock out not yet recorded." });
+        }
+
+        // Update attendance record, setting clock_out_time to null
+        const updatedAttendance = await prisma.attendance.update({
+            where: { attendance_id: attendance.attendance_id },
+            data: {
+                clock_out_time: null,
+            },
+        });
+
+        res.status(200).json({ message: "Clock-out has been canceled", updatedAttendance });
+    } catch (error) {
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'CancelClockOutError',
+            user_id,
+        });
+
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // Check Attendance Status for Today
 exports.checkAttendanceStatus = async (req, res) => {
     const { user_id } = req.user;
