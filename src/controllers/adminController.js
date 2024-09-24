@@ -83,8 +83,8 @@ exports.createAdmin = async (req, res) => {
           user_id: user.user_id,
           position,
           department,
-          manager_id,
-          employment_date,
+          manager_id: manager_id || null,
+          employment_date: new Date(employment_date),
         },
       });
 
@@ -159,7 +159,7 @@ exports.updateAdmin = async (req, res) => {
         username,
         email,
         is_active,
-        assignedBy: { connect: { user_id: assigned_by } },
+        // assignedBy: { connect: { user_id: assigned_by } },
         full_name,
         phone_number,
         profile_picture_url: profilePictureUrl || existingAdmin.profile_picture_url,
@@ -179,8 +179,8 @@ exports.updateAdmin = async (req, res) => {
         user_id: user_id,
         position,
         department,
-        manager_id,
-        employment_date,
+        manager_id: manager_id || null,
+        employment_date: new Date(employment_date),
       },
     });
 
