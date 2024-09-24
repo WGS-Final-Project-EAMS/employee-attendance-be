@@ -115,13 +115,13 @@ exports.createEmployee = async (req, res) => {
         }
 
         // Sen email & password to user email
-        // transport.sendMail(mailOptions, function(error, info){
-        //     if (error) {
-        //         console.log({error: error.message})
-        //     } else {
-        //         console.log('Email sent: ' + info.response);
-        //     }
-        // });
+        transport.sendMail(mailOptions, function(error, info){
+            if (error) {
+                console.log({error: error.message})
+            } else {
+                console.log('Email sent: ' + info.response);
+            }
+        });
 
         res.status(201).json({ user: user, employee: employee, password: password });
     } catch (error) {
@@ -308,6 +308,37 @@ exports.getEmployeeById = async (req, res) => {
 // Get an employee by user id
 exports.getEmployeeByUserId = async (req, res) => {
     const { user_id } = req.params;
+
+    try {
+        const employee = await prisma.employee.findUnique({
+            where: { user_id },
+            include: {
+                user: true,
+                manager: true,
+            },
+        });
+
+        if (!employee) {
+            return res.status(404).json({ error: "Employee not found" });
+        }
+
+        res.status(200).json(employee);
+    } catch (error) {
+        const { user_id } = req.user;
+
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'GetEmployeeByIdError',
+            user_id,
+        });
+
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Get an employee by user login
+exports.getEmployeeByUserLogin = async (req, res) => {
+    const { user_id } = req.user;
 
     try {
         const employee = await prisma.employee.findUnique({

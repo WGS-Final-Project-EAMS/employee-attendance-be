@@ -20,6 +20,9 @@ router.get('/employees/:employee_id', authenticateRole(['admin']), employeeContr
 // Get an employee by user id
 router.get('/employees-user/:user_id', authenticateRole(['super_admin', 'admin']), employeeController.getEmployeeByUserId);
 
+// Get an employee by user login
+router.get('/employees-user', authenticateRole(['admin', 'employee']), employeeController.getEmployeeByUserLogin);
+
 // Update an employee
 router.put('/employees/:employee_id', authenticateRole(['admin']), upload.single('profile_picture_url'), employeeFormValidation(), employeeController.updateEmployee);
 
