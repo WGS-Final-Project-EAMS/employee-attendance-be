@@ -137,6 +137,87 @@ exports.createEmployee = async (req, res) => {
     }
 };
 
+// Update an employee
+exports.updateEmployee = async (req, res) => {
+    // Input error handling
+    const { isValid, errorMessages } = handleValidationErrors(req);
+
+    if (!isValid) {
+        return res.status(400).json({ error: errorMessages });
+    }
+
+    // Get employee id from paramteres
+    const { employee_id } = req.params;
+
+    // Get data from request body
+    const {
+        username, email,
+        full_name,
+        phone_number,
+        position,
+        department,
+        manager_id,
+        assigned_by,
+        employment_date,
+    } = req.body;
+
+    // Is user active
+    const is_active = req.body.is_active === "true";
+
+    // Get profile picture url path
+    const profilePictureUrl = req.file ? req.file.path : null;
+
+    try {
+        // Pastikan employee dengan employee_id ada
+        const existingEmployee = await prisma.employee.findUnique({
+            where: { employee_id },
+            select: { user_id: true },
+        });
+
+        if (!existingEmployee) {
+            return res.status(404).json({ error: "Employee not found" });
+        }
+
+        // Update user data
+        const user = await prisma.user.update({
+            where: { user_id: existingEmployee.user_id },
+            data: {
+                username,
+                email,
+                is_active,
+                // assignedBy: { connect: { user_id: assigned_by } },
+                full_name,
+                phone_number,
+                profile_picture_url: profilePictureUrl || existingEmployee.profile_picture_url,
+            },
+        });
+
+        // Update employee account
+        const updatedEmployee = await prisma.employee.update({
+            where: { employee_id },
+            data: {
+                user_id: existingEmployee.user_id,
+                position,
+                department,
+                manager_id: manager_id || null,
+                employment_date: new Date(employment_date),
+            },
+        });
+
+        res.status(200).json({user: user, employee: updatedEmployee });
+    } catch (error) {
+        const { user_id } = req.user;
+
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'UpdateEmployeeError',
+            user_id,
+        });
+
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // Get all active employees
 exports.getAllEmployees = async (req, res) => {
     try {
@@ -248,92 +329,6 @@ exports.getEmployeeByUserId = async (req, res) => {
         await errorLogs({
             error_message: error.message,
             error_type: 'GetEmployeeByIdError',
-            user_id,
-        });
-
-        res.status(500).json({ error: error.message });
-    }
-};
-
-// Update an employee
-exports.updateEmployee = async (req, res) => {
-    // Input error handling
-    const { isValid, errorMessages } = handleValidationErrors(req);
-
-    if (!isValid) {
-        return res.status(400).json({ error: errorMessages });
-    }
-
-    // Get employee id from paramteres
-    const { user_id } = req.params;
-
-    // Get data from request body
-    const {
-        username, email,
-        full_name,
-        phone_number,
-        position,
-        department,
-        manager_id,
-        assigned_by,
-        employment_date,
-    } = req.body;
-
-    // Is user active
-    const is_active = req.body.is_active === "true";
-
-    // Get profile picture url path
-    const profilePictureUrl = req.file ? req.file.path : null;
-
-    try {
-        // Pastikan employee dengan employee_id ada
-        const existingEmployee = await prisma.employee.findUnique({
-            where: { user_id },
-        });
-
-        if (!existingEmployee) {
-            return res.status(404).json({ error: "Employee not found" });
-        }
-
-        // Update user data
-        const user = await prisma.user.update({
-            where: { user_id },
-            data: {
-                username,
-                email,
-                is_active,
-                assignedBy: { connect: { user_id: assigned_by } },
-                full_name,
-                phone_number,
-                profile_picture_url: profilePictureUrl || existingEmployee.profile_picture_url,
-            },
-        });
-        
-        // Get employee
-        const employee = await prisma.employee.findUnique({
-            where: { user_id },
-            select: { employee_id: true },
-        });
-
-        // Update employee account
-        const updatedEmployee = await prisma.employee.update({
-            where: { employee_id: employee.employee_id },
-            data: {
-                user_id,
-                position,
-                department,
-                manager_id: manager_id || null,
-                employment_date,
-            },
-        });
-
-        res.status(200).json({user: user, employee: updatedEmployee });
-    } catch (error) {
-        const { user_id } = req.user;
-
-        await errorLogs({
-            error_message: error.message,
-            error_type: 'UpdateEmployeeError',
             user_id,
         });
 
