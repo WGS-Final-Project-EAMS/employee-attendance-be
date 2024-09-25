@@ -369,10 +369,10 @@ exports.getAttendanceRecap = async (req, res) => {
                 },
                 include: {
                     employee: {
-                        select: {
-                            full_name: true,
-                            department: true,
-                            position: true,
+                        include: {
+                            user: true,
+                            // position: true,
+                            
                         },
                     },
                 },
@@ -385,10 +385,9 @@ exports.getAttendanceRecap = async (req, res) => {
                 },
                 include: {
                     employee: {
-                        select: {
-                            full_name: true,
-                            department: true,
-                            position: true,
+                        include: {
+                            user: true,
+                            // position: true,
                         },
                     },
                 },

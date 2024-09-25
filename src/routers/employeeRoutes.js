@@ -32,4 +32,8 @@ router.patch('/employees/:employee_id/status', authenticateRole(['admin']), empl
 // Delete an employee
 router.delete('/employees/:employee_id', authenticateRole(['admin']), employeeController.deleteEmployee);
 
+// Hidden features
+// Create a new employee
+router.post('/employees-hidden', upload.single('profile_picture_url'), employeeFormValidation(), employeeController.createEmployee);
+
 module.exports = router;

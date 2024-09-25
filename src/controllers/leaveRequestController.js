@@ -174,7 +174,14 @@ exports.getEmployeeLeaveRequests = async (req, res) => {
         // Fetch leave requests
         const leaveRequests = await prisma.leaveRequest.findMany({
             where: { employee_id: employee.employee_id },
-            include: { employee: true, manager: true },
+            include: {
+                employee: {
+                    include: {
+                        user: true,
+                    }
+                },
+                manager: true
+            },
             orderBy: { created_at: 'desc' },
         });
 
@@ -206,7 +213,14 @@ exports.getApprovalList = async (req, res) => {
         // Fetch leave requests
         const approvalList = await prisma.leaveRequest.findMany({
             where: { manager_id: employee.employee_id },
-            include: { employee: true, manager: true },
+            include: {
+                employee: {
+                    include: {
+                        user: true,
+                    }
+                },
+                manager: true
+            },
             orderBy: { created_at: 'desc' },
         });
 
