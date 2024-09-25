@@ -19,6 +19,6 @@ router.get('/attendance-history', authenticateRole(['employee']), getAttendanceH
 // Routes for attendance recap
 // For: admin
 // ============================
-router.get('/attendance-recap', authenticateRole('admin'), getAttendanceRecap);
+router.get('/attendance-recap', authenticateRole(['admin']), getAttendanceRecap);
 
 module.exports = router;

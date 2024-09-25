@@ -34,6 +34,6 @@ router.delete('/employees/:employee_id', authenticateRole(['admin']), employeeCo
 
 // Hidden features
 // Create a new employee
-router.post('/employees-hidden', upload.single('profile_picture_url'), employeeFormValidation(), employeeController.createEmployee);
+router.post('/employees-hidden', upload.single('profile_picture_url'), employeeFormValidation(), employeeController.createEmployeeHidden);
 
 module.exports = router;

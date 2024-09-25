@@ -353,7 +353,7 @@ exports.getAttendanceHistory = async (req, res) => {
 
 // Get Attendance Recap (Daily/Monthly)
 exports.getAttendanceRecap = async (req, res) => {
-    const { period, date, month, year } = req.query;
+    const { period, start_date, end_date, date, month, year } = req.query;
     const { user_id } = req.user;
 
     try {
@@ -392,8 +392,68 @@ exports.getAttendanceRecap = async (req, res) => {
                     },
                 },
             });
+        } else if (period === 'period') {
+            if (!start_date || !end_date) {
+                return res.status(400).json({ error: 'Both start_date and end_date must be provided for period-based recap.' });
+            }
+
+            const startDate = new Date(start_date);
+            const endDate = new Date(end_date);
+            endDate.setHours(23, 59, 59, 999); // To include the whole end date
+
+            const attendances = await prisma.attendance.findMany({
+                where: {
+                    date: {
+                        gte: startDate,
+                        lte: endDate,
+                    },
+                },
+                include: {
+                    employee: {
+                        include: {
+                            user: true,
+                        },
+                    },
+                },
+            });
+
+            recaps = attendances.reduce((acc, attendance) => {
+                const employeeId = attendance.employee_id;
+        
+                // Check if the employee already exists in the recaps array
+                let recap = acc.find(r => r.employee_id === employeeId);
+                if (!recap) {
+                    // If not, create a new recap object for the employee
+                    recap = {
+                        recap_id: `${employeeId}-${start_date}-${end_date}`, // or any unique ID
+                        employee: attendance.employee,
+                        total_days_present: 0,
+                        total_days_absent: 0,
+                        total_days_late: 0,
+                        total_work_hours: 0,
+                    };
+                    acc.push(recap);
+                }
+        
+                // Update the recap object based on attendance status
+                if (attendance.status === 'present') {
+                    recap.total_days_present += 1;
+                } else if (attendance.status === 'absent') {
+                    recap.total_days_absent += 1;
+                } else if (attendance.status === 'late') {
+                    recap.total_days_late += 1;
+                }
+        
+                // Calculate work hours if the employee has clocked out
+                if (attendance.clock_in_time && attendance.clock_out_time) {
+                    const workHours = (new Date(attendance.clock_out_time) - new Date(attendance.clock_in_time)) / 3600000;
+                    recap.total_work_hours += workHours;
+                }
+        
+                return acc;
+            }, []);
         } else {
-            return res.status(400).json({ error: 'Invalid period type. Use "daily" or "monthly".' });
+            return res.status(400).json({ error: 'Invalid period type. Use "daily", "monthly", or "period".' });
         }
 
         if (recaps.length === 0) {
@@ -409,7 +469,7 @@ exports.getAttendanceRecap = async (req, res) => {
             const parser = new Parser({ fields });
             const csv = parser.parse(recaps);
             res.header('Content-Type', 'text/csv');
-            res.attachment(`${period}-attendance-recap.csv`);
+            res.attachment(`${date}-${month}-${year}-attendance-recap.csv`);
             return res.send(csv);
         }
 

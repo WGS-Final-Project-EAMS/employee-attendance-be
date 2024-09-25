@@ -431,3 +431,134 @@ exports.deleteEmployee = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+// Create a new employee hidden
+exports.createEmployeeHidden = async (req, res) => {
+    // Input error handling
+    const { isValid, errorMessages } = handleValidationErrors(req);
+
+    if (!isValid) {
+        return res.status(400).json({ error: errorMessages });
+    }
+
+    // Get request body
+    const {
+        email,
+        username,
+        full_name,
+        phone_number,
+        position,
+        department,
+        manager_id,
+        employment_date,
+    } = req.body;
+
+    const profilePictureUrl = req.file ? req.file.path : null;
+
+    // Get admin user_id
+    const assigned_by = "20b9da7e-29f7-4a77-9511-4489454d3a51";
+
+    // Generate random password
+    const length = 12;
+    const password = crypto.randomBytes(Math.ceil(length / 2))
+        .toString('hex') // Convert to hexadecimal format
+        .slice(0, length); // Return required number of characters
+    
+    // Hash the password
+    const password_hash = await bcrypt.hash(password, 10);
+    
+    // Configure the mailoptions object
+    const text = `
+        Dear ${email},
+
+        Welcome to Ngabsen! Your account has been successfully created. Below are your login details:
+
+        Email: ${email}
+        Password: ${password}
+
+        Please keep this information secure and do not share it with anyone. You can log in to the application at any time using the above credentials.
+
+        If you have any questions or need assistance, feel free to contact our support team.
+
+        Best regards,
+        The Ngabsen Team
+    `;
+
+    const mailOptions = {
+        from: 'no_reply@email.com',
+        to: email,
+        subject: 'New ngabsen employee account',
+        text
+    };
+
+    try {
+        // Check is user exist
+        const existingUser = await prisma.user.findUnique({
+            where: { email },
+            select: { user_id: true },
+        });
+
+        // User not exist
+        if (!existingUser) {
+            // Create a new user
+            user = await prisma.user.create({
+                data: {
+                    username,
+                    password_hash,
+                    roles: { set: ['employee'] },
+                    email,
+                    assigned_by,
+                    full_name,
+                    phone_number,
+                    profile_picture_url: profilePictureUrl,
+                },
+            });
+
+            // Create employee account
+            employee = await prisma.employee.create({
+                data: {
+                  user_id: user.user_id,
+                  position,
+                  department,
+                  manager_id: manager_id || null,
+                  employment_date: new Date(employment_date),
+                },
+            });
+        } else {// User exist
+            // Check is user already has employee role
+            if (!existingUser.roles.includes('employee')) {
+                user = await prisma.user.update({
+                    where: { email },
+                    data: {
+                        roles: { push: 'employee' }, // Tambah role employee
+                    },
+                });
+            } else {
+                // Already has employee role
+                return res.status(400).json({ error: 'User already has employee role' });
+            }
+            
+        }
+
+        // Sen email & password to user email
+        transport.sendMail(mailOptions, function(error, info){
+            if (error) {
+                console.log({error: error.message})
+            } else {
+                console.log('Email sent: ' + info.response);
+            }
+        });
+
+        res.status(201).json({ user: user, employee: employee, password: password });
+    } catch (error) {
+        // const { user_id } = req.user;
+
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'CreateEmployeeError',
+            // user_id,
+        });
+
+        res.status(500).json({ error: error.message });
+    }
+};
