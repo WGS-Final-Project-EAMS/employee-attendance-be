@@ -200,6 +200,12 @@ exports.updateAdmin = async (req, res) => {
 
 // Get List of Admins
 exports.getAllAdmins = async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+  
   try {
     const admins = await prisma.user.findMany({
       where: { roles: { has: 'admin' } }, // Only get user with roles admin
@@ -207,7 +213,9 @@ exports.getAllAdmins = async (req, res) => {
         assignedBy: true, // include user assigner data for each employee
       },
     });
-    res.status(200).json(admins);
+
+    const paginatedAdmins = admins.slice(startIndex, endIndex)
+    res.status(200).json({ totalItems: admins.length, totalPages: Math.ceil(admins.length / limit), data: paginatedAdmins });
   } catch (error) {
     const { user_id } = req.user;
     
@@ -223,6 +231,12 @@ exports.getAllAdmins = async (req, res) => {
 
 // Get List of Active Admins
 exports.getActiveAdmins = async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+
   try {
     const admins = await prisma.user.findMany({
       where: {
@@ -235,7 +249,9 @@ exports.getActiveAdmins = async (req, res) => {
         assignedBy: true, // include user assigner data for each employee
       },
     });
-    res.status(200).json(admins);
+
+    const paginatedAdmins = admins.slice(startIndex, endIndex)
+    res.status(200).json({ page, limit, totalItems: admins.length, totalPages: Math.ceil(admins.length / limit), data: paginatedAdmins });
   } catch (error) {
     const { user_id } = req.user;
     
@@ -251,6 +267,12 @@ exports.getActiveAdmins = async (req, res) => {
 
 // Get List of Non-active Admins
 exports.getNonactiveAdmins = async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+
   try {
     const admins = await prisma.user.findMany({
       where: {
@@ -263,7 +285,8 @@ exports.getNonactiveAdmins = async (req, res) => {
         assignedBy: true, // include user assigner data for each employee
       },
     });
-    res.status(200).json(admins);
+    const paginatedAdmins = admins.slice(startIndex, endIndex)
+    res.status(200).json({ page, limit, totalItems: admins.length, totalPages: Math.ceil(admins.length / limit), data: paginatedAdmins });
   } catch (error) {
     const { user_id } = req.user;
     
