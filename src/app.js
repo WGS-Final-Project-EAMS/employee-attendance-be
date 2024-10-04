@@ -19,7 +19,7 @@ const app = express();
 dotenv.config();
 
 const PORT = process.env.PORT;
-const IP_ADRESS = process.env.IP_ADRESS;
+const IP_ADRESS = process.env.BASE_URL;
 
 // Morgan
 app.use(morgan('dev'));

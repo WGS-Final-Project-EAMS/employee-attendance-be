@@ -220,6 +220,12 @@ exports.updateEmployee = async (req, res) => {
 
 // Get all active employees
 exports.getAllEmployees = async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+
     try {
         const employees = await prisma.employee.findMany({
             where: {
@@ -232,7 +238,10 @@ exports.getAllEmployees = async (req, res) => {
                 manager: true, // include manager data if exists
             },
         });
-        res.status(200).json(employees);
+
+        const paginatedEmployees = employees.slice(startIndex, endIndex)
+
+        res.status(200).json({ totalItems: employees.length, totalPages: Math.ceil(employees.length / limit), data: paginatedEmployees });
     } catch (error) {
         const { user_id } = req.user;
 
@@ -248,6 +257,12 @@ exports.getAllEmployees = async (req, res) => {
 
 // Get inactive employees
 exports.getInactiveEmployees = async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+
     try {
         const employees = await prisma.employee.findMany({
             where: {
@@ -260,7 +275,9 @@ exports.getInactiveEmployees = async (req, res) => {
                 manager: true,
             },
         });
-        res.status(200).json(employees);
+
+        const paginatedEmployees = employees.slice(startIndex, endIndex)
+        res.status(200).json({ totalItems: employees.length, totalPages: Math.ceil(employees.length / limit), data: paginatedEmployees });
     } catch (error) {
         const { user_id } = req.user;
 
