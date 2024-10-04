@@ -6,7 +6,13 @@ const authRoutes = require('./routers/authRoutes');
 const userRoutes = require('./routers/userRoutes');
 const employeeRoutes = require('./routers/employeeRoutes');
 const attendanceRoutes = require('./routers/attendanceRoutes');
+const leaveRequestRoutes = require('./routers/leaveRequestRoutes');
+const officeSettingsRoutes = require('./routers/officeSettingsRoutes');
+const streakRoutes = require('./routers/streakRoutes');
 const errorLogRoutes = require('./routers/errorLogRoutes');
+const generateAttendanceRecap = require('./job/attendanceRecapJob');
+const checkAbsentSchedule = require('./job/checkAbsentJob');
+const path = require('path');
 
 const app = express();
 
@@ -20,12 +26,32 @@ app.use(morgan('dev'));
 
 app.use(express.json());
 
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*"); // Mengizinkan semua origin
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS"); // Mengizinkan semua metode HTTP
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).json({});
+    }
+
+    next();
+});
+
+generateAttendanceRecap();
+checkAbsentSchedule();
+
+app.use('/api/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // API Routes
 app.use('/api', adminRoutes);
 app.use('/api', authRoutes);
 app.use('/api', userRoutes);
 app.use('/api', employeeRoutes);
 app.use('/api', attendanceRoutes);
+app.use('/api', leaveRequestRoutes);
+app.use('/api', officeSettingsRoutes);
+app.use('/api', streakRoutes);
 app.use('/api', errorLogRoutes);
 
 // Default empty routes

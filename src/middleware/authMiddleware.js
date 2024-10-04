@@ -14,10 +14,32 @@ exports.authenticateRole = (requiredRole) => {
 
         try {
             const decoded = jwt.verify(token, SECRET_KEY);
-
-            if (decoded.role !== requiredRole) {
+            
+            if (!requiredRole.includes(decoded.roles)) {
                 return res.status(403).json({ error: `Access denied. ${requiredRole} only.` });
             }
+
+            req.user = decoded;
+            next();
+        } catch (error) {
+            res.status(401).json({ error: 'Invalid or expired token.' });
+        }
+    };
+};
+
+// Middleware generik untuk memeriksa peran
+exports.authenticateUser = () => {
+    return (req, res, next) => {
+        const authHeader = req.header('Authorization');
+
+        if (!authHeader) {
+            return res.status(401).json({ error: `Authorization header is missing.` });
+        }
+
+        const token = authHeader.replace('Bearer ', '');
+
+        try {
+            const decoded = jwt.verify(token, SECRET_KEY);
 
             req.user = decoded;
             next();

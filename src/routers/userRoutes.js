@@ -1,11 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
+const { authenticateUser } = require('../middleware/authMiddleware');
 
-// router.post('/admin', userController.createAdmin);
-// router.put('/api/admins/:admin_id', userController.updateAdmin);
-// router.delete('/api/admins/:admin_id', userController.deleteAdmin);
+// Get all user
 router.get('/users', userController.getAllUsers);
-// router.get('/admin/:admin_id', userController.getAdminById);
+
+// Get user by id
+router.get('/user', authenticateUser(), userController.getUserById);
+
+// Change user password
+router.put('/user/change-password', authenticateUser(), userController.changePassword);
+
+// Reset user password
+router.put('/user/reset-password', userController.resetPassword);
 
 module.exports = router;

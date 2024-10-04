@@ -1,4 +1,4 @@
-// const bcrypt = require('bcrypt');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const { validationResult } = require('express-validator');
@@ -28,17 +28,22 @@ exports.login = async (req, res) => {
         });
 
         if (!user) {
-            return res.status(401).json({ error: "Invalid email or password" });
+            return res.status(401).json({ error: { general: "Invalid email or password" } });
         }
 
         // Compare the provided password with the stored hash
-        // const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-        const isPasswordValid = (inputPassword, storedPassword) => {
-            return inputPassword === storedPassword;
-        };
+        const isPasswordValid = await bcrypt.compare(password, user.password_hash);
 
-        if (!isPasswordValid(password, user.password_hash)) {
-            return res.status(401).json({ error: "Invalid email or password" });
+        if (!isPasswordValid) {
+            return res.status(401).json({ error: { general: "Invalid email or password" } });
+        }
+
+        const isUserActive = (status) => {
+            return status;
+        }
+
+        if (!isUserActive(user.is_active)) {
+            return res.status(401).json({ error: { general: "Your account is inactive" } });
         }
 
         // Generate JWT token
@@ -46,10 +51,10 @@ exports.login = async (req, res) => {
         {
             user_id: user.user_id,
             email: user.email,
-            role: user.role,
+            roles: user.roles,
         },
             SECRET_KEY,
-        { expiresIn: '1h' }
+        { expiresIn: '7h' }
         );
 
         res.status(200).json({ token });
@@ -57,6 +62,131 @@ exports.login = async (req, res) => {
         await errorLogs({
             error_message: error.message,
             error_type: 'LoginError',
+        });
+
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Login as Admin
+exports.loginAdmin = async (req, res) => {
+    const errors = validationResult(req);
+    const errorMessages = errors.array().reduce((acc, error) => {
+        acc[error.path] = error.msg;
+        return acc;
+    }, {});
+
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ error: errorMessages });
+    }
+
+    try {
+        const { email, password } = req.body;
+
+        // Check if the user exists
+        const user = await prisma.user.findUnique({
+            where: { email },
+        });
+
+        if (!user) {
+            return res.status(401).json({ error: { general: "Invalid email or password" } });
+        }
+
+        // Check if the user has admin or super_admin role
+        if (!user.roles.includes('admin') && !user.roles.includes('super_admin')) {
+            return res.status(403).json({ error: { general: "Access denied. Admin only." } });
+        }
+
+        // Compare the provided password with the stored hash
+        const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+
+        if (!isPasswordValid) {
+            return res.status(401).json({ error: { general: "Invalid email or password" } });
+        }
+
+        if (!user.is_active) {
+            return res.status(401).json({ error: { general: "Your account is inactive" } });
+        }
+
+        // Generate JWT token with admin/super_admin role
+        const token = jwt.sign(
+        {
+            user_id: user.user_id,
+            email: user.email,
+            roles: user.roles.includes('super_admin') ? 'super_admin' : 'admin',  // Store 'admin' or 'super_admin'
+        },
+            SECRET_KEY,
+        { expiresIn: '7h' }
+        );
+
+        res.status(200).json({ token });
+    } catch (error) {
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'LoginAdminError',
+        });
+
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+// Login as Employee
+exports.loginEmployee = async (req, res) => {
+    const errors = validationResult(req);
+    const errorMessages = errors.array().reduce((acc, error) => {
+        acc[error.path] = error.msg;
+        return acc;
+    }, {});
+
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ error: errorMessages });
+    }
+
+    try {
+        const { email, password } = req.body;
+
+        // Check if the user exists
+        const user = await prisma.user.findUnique({
+            where: { email },
+        });
+
+        if (!user) {
+            return res.status(401).json({ error: { general: "Invalid email or password" } });
+        }
+
+        // Check if the user has employee role
+        if (!user.roles.includes('employee')) {
+            return res.status(403).json({ error: { general: "Access denied. Employee only." } });
+        }
+
+        // Compare the provided password with the stored hash
+        const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+
+        if (!isPasswordValid) {
+            return res.status(401).json({ error: { general: "Invalid email or password" } });
+        }
+
+        if (!user.is_active) {
+            return res.status(401).json({ error: { general: "Your account is inactive" } });
+        }
+
+        // Generate JWT token with employee role
+        const token = jwt.sign(
+        {
+            user_id: user.user_id,
+            email: user.email,
+            roles: 'employee',  // Store 'employee' role
+        },
+            SECRET_KEY,
+        { expiresIn: '7h' }
+        );
+
+        res.status(200).json({ token });
+    } catch (error) {
+        await errorLogs({
+            error_message: error.message,
+            error_type: 'LoginEmployeeError',
         });
 
         res.status(500).json({ error: error.message });
@@ -80,8 +210,9 @@ exports.access_resource = async (req, res) => {
       {
         success: true,
         data: {
-          userId: decodedToken.userId,
-          email: decodedToken.email
+          user_id: decodedToken.user_id,
+          email: decodedToken.email,
+          roles: decodedToken.roles,
         }
       }
     );

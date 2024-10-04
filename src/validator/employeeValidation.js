@@ -1,10 +1,7 @@
 const { body } = require('express-validator');
 
-exports.adminFormValidation = () => {
+exports.employeeFormValidation = () => {
     return [
-        // body('role')
-        //     .trim()
-        //     .notEmpty().withMessage('role is required'),
         body('email')
             .trim()
             .notEmpty().withMessage('email is required')
