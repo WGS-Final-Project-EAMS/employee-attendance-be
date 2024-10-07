@@ -61,7 +61,23 @@ exports.createLeaveRequest = async (req, res) => {
             },
         });
 
-        res.status(201).json({ message: "Leave request submitted", leaveRequest });
+        // Fetch user by manager_id
+        const manager = await prisma.employee.findFirst({
+            where: { employee_id: leaveRequest.manager_id },
+            select: { user: true },
+        });
+
+        // Create notification
+        const notification = await prisma.notification.create({
+            data: {
+                user_id: manager.user.user_id,
+                title: leaveRequest.leave_type,
+                message: leaveRequest.leave_reason,
+                is_read: false,
+            }
+        });
+
+        res.status(201).json({ message: "Leave request submitted", leaveRequest, notification });
     } catch (error) {
         const { user_id } = req.user;
         await errorLogs({

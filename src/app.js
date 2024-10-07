@@ -9,6 +9,7 @@ const attendanceRoutes = require('./routers/attendanceRoutes');
 const leaveRequestRoutes = require('./routers/leaveRequestRoutes');
 const officeSettingsRoutes = require('./routers/officeSettingsRoutes');
 const streakRoutes = require('./routers/streakRoutes');
+const notificationRoutes = require('./routers/notificationRoutes');
 const errorLogRoutes = require('./routers/errorLogRoutes');
 const generateAttendanceRecap = require('./job/attendanceRecapJob');
 const checkAbsentSchedule = require('./job/checkAbsentJob');
@@ -52,6 +53,7 @@ app.use('/api', attendanceRoutes);
 app.use('/api', leaveRequestRoutes);
 app.use('/api', officeSettingsRoutes);
 app.use('/api', streakRoutes);
+app.use('/api', notificationRoutes);
 app.use('/api', errorLogRoutes);
 
 // Default empty routes
